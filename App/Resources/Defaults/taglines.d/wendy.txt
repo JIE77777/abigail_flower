@@ -1,0 +1,26 @@
+# Wendy 官方双语短句库
+#
+# 来源：
+# - /home/steam/dontstarvetogether_dedicated_server/data/databundles/scripts.zip
+#   - scripts/speech_wendy.lua
+#   - scripts/languages/chinese_s.po
+# - /home/steam/Wagstaff-Lab 的解析链路用于定位原始语言文件
+#
+# 这里只保留适合桌贴显示的短句。
+# 格式为：English quote || 官方中文
+
+Everything dies. || 万物皆有一死。
+Nothing comes of nothing. || 无中生无。
+Will you leave too? || 你也要离开我？
+Freedom. Great. || 自由，太好了。
+The darkness has swallowed me. || 黑暗吞没了我。
+And there was light! || 随后就有了光！
+Smells like death. || 闻起来像死亡的味道。
+Not all deaths are alike. || 并不是所有死亡都是相似的。
+My heart is heavy enough... without this... || 我内心已经极其沉重了...怎么还来这个...
+Abigail? Was that you...? || 阿比盖尔？是你吗……？
+I can see a light... || 我看见一束光……
+I have seen the void and it is deep and dark. || 我看到了虚空，它深沉而又黑暗。
+Abigail has always been my guiding light in the darkness... || 阿比盖尔一直是我黑暗中的指路明灯……
+A wretched hive of scum and pollen. || 充满渣滓和花粉的可悲蜂窝。
+The ground shakes. Will it swallow me whole? || 大地在晃动。它会将我整个吞没吗？
