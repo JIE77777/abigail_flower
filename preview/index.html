@@ -16,14 +16,50 @@
           <p class="stage__eyebrow">网页模拟版</p>
           <h1>阿比盖尔之花</h1>
           <p class="stage__copy">
-            这是原生 macOS 卡片 app 的网页模拟预览。它会按今天的日期计算倒计时，
-            并近似还原卡片本体的排版和换签节奏。
+            这是原生 macOS 卡片 app 的网页模拟预览。它会直接读取仓库里的真实文案库和权重，
+            你可以在这里模拟不同日期下的卡片气质和排版。
           </p>
           <div class="stage__meta">
-            <span>84 条副标题</span>
-            <span>18 条小彩蛋</span>
-            <span>原生卡片布局近似还原</span>
+            <span id="tagline-count">副标题读取中</span>
+            <span id="egg-count">彩蛋读取中</span>
+            <span id="tone-label">主题读取中</span>
           </div>
+
+          <section class="preview-controls" aria-label="日期模拟器">
+            <div class="preview-controls__head">
+              <div>
+                <p class="preview-controls__eyebrow">日期模拟</p>
+                <h2>换个日子看看</h2>
+              </div>
+              <button class="preview-controls__today" id="jump-today" type="button">回到今天</button>
+            </div>
+
+            <label class="preview-controls__field" for="sim-date">
+              <span>当前日期</span>
+              <input id="sim-date" type="date" />
+            </label>
+
+            <div class="preview-controls__stepper">
+              <button class="preview-chip-button" type="button" data-shift-days="-7">-7 天</button>
+              <button class="preview-chip-button" type="button" data-shift-days="-1">前一天</button>
+              <button class="preview-chip-button" type="button" data-shift-days="1">后一天</button>
+              <button class="preview-chip-button" type="button" data-shift-days="7">+7 天</button>
+            </div>
+
+            <div class="preview-controls__quick">
+              <button class="preview-chip-button" type="button" data-jump="target">8.31 当天</button>
+              <button class="preview-chip-button" type="button" data-jump="minus30">前 30 天</button>
+              <button class="preview-chip-button" type="button" data-jump="minus10">前 10 天</button>
+              <button class="preview-chip-button" type="button" data-jump="august">8 月初</button>
+            </div>
+
+            <div class="preview-controls__summary">
+              <p id="sim-date-label">模拟日期：2026.03.24 周二</p>
+              <p id="sim-target-label">目标日期：2026.08.31</p>
+            </div>
+
+            <p class="preview-controls__status" id="source-status">正在读取仓库中的真实文案库…</p>
+          </section>
         </aside>
 
         <section class="preview-card-shell" aria-label="倒计时卡片预览">

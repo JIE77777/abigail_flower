@@ -1,10 +1,11 @@
-const previewConfig = {
-  titleLine: "距离 8.31",
+const defaultPreviewConfig = {
+  titleLine: '距离 8.31',
   targetMonth: 8,
   targetDay: 31,
   taglineCountMin: 1,
   taglineCountMax: 1,
   easterEggDailyChance: 28,
+  showEnglishFirst: true,
   taglineWeights: {
     bright: 3,
     reminders: 2,
@@ -24,155 +25,70 @@ const previewConfig = {
   },
 };
 
+const fallbackData = {
+  taglines: {
+    bright: [['你今天是最棒的！']],
+    reminders: [['今天记得喝水！']],
+    playful: [['啊啊啊啊啊啊啊啊']],
+    wendy: [['Everything dies.', '万物皆有一死。']],
+    cookie: [['Cookie 说你今天超棒']],
+  },
+  easterEggs: {
+    always: [['隐藏彩蛋：今天适合奖励自己一下']],
+  },
+};
+
 const milestoneDays = new Set([200, 160, 150, 120, 100, 60, 50, 30, 10, 7, 3, 1]);
+const rerollStorageKey = 'abigail-flower-preview-reroll-seed';
+const rerollDateKey = 'abigail-flower-preview-reroll-date';
+const simulatedDateStorageKey = 'abigail-flower-preview-simulated-date';
 
-const taglines = {
-  bright: [
-    ["你今天是最棒的！"],
-    ["真棒！"],
-    ["今天也会顺顺利利"],
-    ["今天也要开开心心"],
-    ["今天大家都爱你~"],
-    ["今天也值得被夸夸"],
-    ["今天也请喜欢自己一点"],
-    ["今天会有好事发生"],
-    ["离 8.31 又近一点啦"],
-    ["离那一天更近一点啦"],
-    ["好，继续出发！"],
-    ["今天状态不错哦"],
-    ["今天也闪闪发亮"],
-    ["你今天真的很棒"],
-    ["给今天的自己鼓鼓掌"],
-    ["今天先对自己好一点"],
-    ["今天记得抬头挺胸"],
-    ["别急，你已经很好了"],
-    ["慢慢来也没关系"],
-    ["好心情正在靠近你"],
-    ["今天也会被温柔接住"],
-    ["今天是可爱的一天"],
-    ["今天一定有一点点幸运"],
-    ["你值得很多很多偏爱"],
-    ["今天大家都站你这边"],
-    ["先完成一点点，也很棒"],
-    ["你已经比昨天更近了"],
-    ["8 月 31 日在等你"],
-    ["期待正在慢慢变近"],
-  ],
-  cookie: [
-    ["cookie是世界上最好的猫！"],
-    ["Cookie 觉得你今天超棒"],
-    ["Cookie 说你已经很厉害了"],
-    ["Cookie 路过，顺手夸夸你"],
-    ["想到 Cookie 心情就变好了"],
-    ["Cookie 今天也支持你"],
-    ["Cookie 认证：今天也很可以"],
-    ["Cookie 远程给你踩奶成功"],
-    ["Cookie 说先开心一下"],
-    ["Cookie 觉得你值得被偏爱"],
-    ["Cookie 陪你一起等 8.31"],
-    ["Cookie 说今天适合吸一口猫"],
-    ["Cookie 觉得世界纷纷扰扰，但你很重要"],
-    ["Cookie 说先摸摸小猫再出发"],
-    ["出门前请咬 Cookie 一口"],
-    ["Cookie 已经在门口给你送行了"],
-    ["Cookie 觉得今天可以先从贴贴开始"],
-    ["Cookie 觉得你今天不许委屈"],
-  ],
-  playful: [
-    ["啊啊啊啊啊啊啊啊"],
-    ["（尖叫发泄）"],
-    ["上号搞饥吗？"],
-    ["今天要不要偷偷喝点？"],
-    ["缺爱吗，姐姐？今天不缺"],
-    ["今天适合小小发疯一下"],
-    ["今天先尖叫两声再出门"],
-    ["今天先别讲道理"],
-    ["今天允许一点点荒诞"],
-    ["上号吗，今天适合联机活命"],
-  ],
-  reminders: [
-    ["今天要运动！"],
-    ["今天记得喝水！"],
-    ["今天记得按时吃饭"],
-    ["吃药了吗？"],
-    ["今天也别忘了休息"],
-    ["起身活动一下吧"],
-    ["去晒晒太阳也不错"],
-    ["别久坐太久哦"],
-    ["今天也要照顾好自己"],
-    ["睡前记得放松一下"],
-    ["记得伸个懒腰"],
-    ["给自己留一点喘气时间"],
-  ],
-  wendy: [
-    ["Everything dies.", "万物皆有一死。"],
-    ["Nothing comes of nothing.", "无中生无。"],
-    ["Will you leave too?", "你也要离开我？"],
-    ["Freedom. Great.", "自由，太好了。"],
-    ["The darkness has swallowed me.", "黑暗吞没了我。"],
-    ["And there was light!", "随后就有了光！"],
-    ["Smells like death.", "闻起来像死亡的味道。"],
-    ["Not all deaths are alike.", "并不是所有死亡都是相似的。"],
-    ["My heart is heavy enough... without this...", "我内心已经极其沉重了...怎么还来这个..."],
-    ["Abigail? Was that you...?", "阿比盖尔？是你吗……？"],
-    ["I can see a light...", "我看见一束光……"],
-    ["I have seen the void and it is deep and dark.", "我看到了虚空，它深沉而又黑暗。"],
-    ["Abigail has always been my guiding light in the darkness...", "阿比盖尔一直是我黑暗中的指路明灯……"],
-    ["A wretched hive of scum and pollen.", "充满渣滓和花粉的可悲蜂窝。"],
-    ["The ground shakes. Will it swallow me whole?", "大地在晃动。它会将我整个吞没吗？"],
-  ],
+const sourceManifest = {
+  taglines: ['bright', 'cookie', 'playful', 'reminders', 'wendy'],
+  easterEggs: ['always', 'august', 'cookie', 'final10', 'final30', 'friday', 'milestones', 'weekend'],
 };
 
-const easterEggs = {
-  always: [
-    ["隐藏彩蛋：今天适合奖励自己一下"],
-    ["隐藏彩蛋：请收下今天的小幸运"],
-    ["隐藏彩蛋：已经在悄悄靠近好事了"],
-  ],
-  august: [
-    ["8 月到了，真的越来越近了"],
-    ["这个月就是 8.31 的月份"],
-  ],
-  cookie: [
-    ["隐藏彩蛋：Cookie 正在认真爱你"],
-    ["隐藏彩蛋：Cookie 批准今天有好心情"],
-    ["隐藏彩蛋：Cookie 觉得你值得一个罐头级夸奖"],
-  ],
-  final10: [
-    ["个位数倒计时就在前面了"],
-    ["最后 10 天，心跳会快一点"],
-  ],
-  final30: [
-    ["30 天内冲刺模式启动"],
-    ["已经进入最后一个月的范围啦"],
-  ],
-  friday: [
-    ["周五加成已生效"],
-    ["今天带一点周五滤镜"],
-  ],
-  milestones: [
-    ["今天是一个很好记的里程碑"],
-    ["这种整数倒计时，值得多看一眼"],
-  ],
-  weekend: [
-    ["周末了，记得松一口气"],
-    ["今天适合把步子放慢一点"],
-  ],
+function deepClone(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+const previewState = {
+  config: deepClone(defaultPreviewConfig),
+  taglines: deepClone(fallbackData.taglines),
+  easterEggs: deepClone(fallbackData.easterEggs),
 };
 
-const cardNode = document.querySelector(".preview-card");
-const titleNode = document.getElementById("card-title");
-const currentBadgeNode = document.getElementById("current-badge");
-const quotePanelNode = document.getElementById("quote-panel");
-const quoteFooterNode = document.getElementById("quote-footer");
-const rerollButton = document.getElementById("reroll-button");
-const countdownBlock = document.getElementById("countdown-block");
+const cardNode = document.querySelector('.preview-card');
+const titleNode = document.getElementById('card-title');
+const currentBadgeNode = document.getElementById('current-badge');
+const quotePanelNode = document.getElementById('quote-panel');
+const quoteFooterNode = document.getElementById('quote-footer');
+const rerollButton = document.getElementById('reroll-button');
+const countdownBlock = document.getElementById('countdown-block');
+const simDateInput = document.getElementById('sim-date');
+const jumpTodayButton = document.getElementById('jump-today');
+const shiftButtons = Array.from(document.querySelectorAll('[data-shift-days]'));
+const jumpButtons = Array.from(document.querySelectorAll('[data-jump]'));
+const taglineCountNode = document.getElementById('tagline-count');
+const eggCountNode = document.getElementById('egg-count');
+const toneLabelNode = document.getElementById('tone-label');
+const simDateLabelNode = document.getElementById('sim-date-label');
+const simTargetLabelNode = document.getElementById('sim-target-label');
+const sourceStatusNode = document.getElementById('source-status');
 
-const rerollStorageKey = "abigail-flower-preview-reroll-seed";
-const rerollDateKey = "abigail-flower-preview-reroll-date";
+function cloneDataMap(map) {
+  return Object.fromEntries(
+    Object.entries(map).map(([name, entries]) => [name, entries.map((lines) => [...lines])]),
+  );
+}
 
-function dayStamp(date) {
-  return date.toISOString().slice(0, 10);
+function sumEntries(map) {
+  return Object.values(map).reduce((sum, entries) => sum + entries.length, 0);
+}
+
+function toInt(value, fallback) {
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) ? parsed : fallback;
 }
 
 function currentDayStart() {
@@ -180,24 +96,79 @@ function currentDayStart() {
   return new Date(now.getFullYear(), now.getMonth(), now.getDate());
 }
 
+function normalizeDate(date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function parseDateInput(value) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) return null;
+  return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+}
+
+function formatInputDate(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function dayStamp(date) {
+  return formatInputDate(date);
+}
+
 function formatCurrentBadge(date) {
-  const weekdays = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
+  const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
   return `${month}.${day} ${weekdays[date.getDay()]}`;
+}
+
+function formatFullDateLabel(date) {
+  const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}.${month}.${day} ${weekdays[date.getDay()]}`;
+}
+
+function formatTargetLabel(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}.${month}.${day}`;
+}
+
+function addDays(date, days) {
+  const result = new Date(date);
+  result.setDate(result.getDate() + days);
+  return normalizeDate(result);
 }
 
 function makeTarget(today) {
   const year = today.getFullYear();
-  let target = new Date(year, previewConfig.targetMonth - 1, previewConfig.targetDay);
+  let target = new Date(year, previewState.config.targetMonth - 1, previewState.config.targetDay);
   if (today > target) {
-    target = new Date(year + 1, previewConfig.targetMonth - 1, previewConfig.targetDay);
+    target = new Date(year + 1, previewState.config.targetMonth - 1, previewState.config.targetDay);
   }
   return target;
 }
 
 function daysRemaining(today, target) {
   return Math.round((target.getTime() - today.getTime()) / 86400000);
+}
+
+function toneLabel(tone) {
+  switch (tone) {
+    case 'today':
+      return '主题：当天';
+    case 'final':
+      return '主题：最后 10 天';
+    case 'milestone':
+      return '主题：里程碑';
+    default:
+      return '主题：常规日';
+  }
 }
 
 function fnv1a32(input) {
@@ -246,19 +217,17 @@ function pickWeightedCategory(pool, weights, rng) {
 
 function pickTaglines(seedText) {
   const rng = makeRng(seedText);
-  const available = Object.values(taglines).reduce((sum, items) => sum + items.length, 0);
+  const available = Object.values(previewState.taglines).reduce((sum, items) => sum + items.length, 0);
   const count = Math.min(
     available,
-    randomInt(rng, previewConfig.taglineCountMin, previewConfig.taglineCountMax),
+    randomInt(rng, previewState.config.taglineCountMin, previewState.config.taglineCountMax),
   );
 
-  const working = Object.fromEntries(
-    Object.entries(taglines).map(([name, items]) => [name, [...items]]),
-  );
-
+  const working = cloneDataMap(previewState.taglines);
   const picked = [];
+
   while (picked.length < count) {
-    const category = pickWeightedCategory(working, previewConfig.taglineWeights, rng);
+    const category = pickWeightedCategory(working, previewState.config.taglineWeights, rng);
     if (!category) break;
     const bucket = working[category];
     const index = randomInt(rng, 0, bucket.length - 1);
@@ -271,21 +240,21 @@ function pickTaglines(seedText) {
 function easterCondition(name, today, remainingDaysCount) {
   const weekday = today.getDay();
   switch (name) {
-    case "always":
+    case 'always':
       return true;
-    case "friday":
+    case 'friday':
       return weekday === 5;
-    case "weekend":
+    case 'weekend':
       return weekday === 0 || weekday === 6;
-    case "august":
+    case 'august':
       return today.getMonth() === 7;
-    case "final30":
+    case 'final30':
       return remainingDaysCount >= 1 && remainingDaysCount <= 30;
-    case "final10":
+    case 'final10':
       return remainingDaysCount >= 1 && remainingDaysCount <= 10;
-    case "milestones":
+    case 'milestones':
       return milestoneDays.has(remainingDaysCount);
-    case "cookie":
+    case 'cookie':
       return true;
     default:
       return false;
@@ -294,17 +263,17 @@ function easterCondition(name, today, remainingDaysCount) {
 
 function pickEasterEgg(seedText, today, remainingDaysCount) {
   const rng = makeRng(`${seedText}::easter`);
-  if (randomInt(rng, 1, 100) > previewConfig.easterEggDailyChance) {
+  if (randomInt(rng, 1, 100) > previewState.config.easterEggDailyChance) {
     return null;
   }
 
   const filtered = Object.fromEntries(
-    Object.entries(easterEggs).filter(([name, entries]) => (
+    Object.entries(previewState.easterEggs).filter(([name, entries]) => (
       easterCondition(name, today, remainingDaysCount) && entries.length > 0
     )),
   );
 
-  const category = pickWeightedCategory(filtered, previewConfig.easterWeights, rng);
+  const category = pickWeightedCategory(filtered, previewState.config.easterWeights, rng);
   if (!category) return null;
 
   const bucket = filtered[category];
@@ -328,10 +297,10 @@ function saveRerollSeed(today) {
 }
 
 function resolveTone(days) {
-  if (days === 0) return "today";
-  if (days <= 10) return "final";
-  if (milestoneDays.has(days)) return "milestone";
-  return "default";
+  if (days === 0) return 'today';
+  if (days <= 10) return 'final';
+  if (milestoneDays.has(days)) return 'milestone';
+  return 'default';
 }
 
 function renderCountdown(days) {
@@ -356,23 +325,23 @@ function renderCountdown(days) {
 }
 
 function renderPrimaryEntries(entries) {
-  quotePanelNode.innerHTML = "";
+  quotePanelNode.innerHTML = '';
   entries.forEach((entry) => {
     const isBilingual = entry.lines.length > 1;
-    const wrapper = document.createElement("div");
-    wrapper.className = `quote-entry${isBilingual ? " quote-entry--bilingual" : ""}`;
+    const wrapper = document.createElement('div');
+    wrapper.className = `quote-entry${isBilingual ? ' quote-entry--bilingual' : ''}`;
 
     if (isBilingual) {
-      const rail = document.createElement("span");
-      rail.className = "quote-entry__rail";
+      const rail = document.createElement('span');
+      rail.className = 'quote-entry__rail';
       wrapper.appendChild(rail);
 
-      const content = document.createElement("div");
-      content.className = "quote-entry__content";
+      const content = document.createElement('div');
+      content.className = 'quote-entry__content';
 
       entry.lines.forEach((line, index) => {
-        const paragraph = document.createElement("p");
-        paragraph.className = `quote-entry__line quote-entry__line--${index === 0 ? "lead" : "follow"}`;
+        const paragraph = document.createElement('p');
+        paragraph.className = `quote-entry__line quote-entry__line--${index === 0 ? 'lead' : 'follow'}`;
         paragraph.textContent = line;
         content.appendChild(paragraph);
       });
@@ -380,8 +349,8 @@ function renderPrimaryEntries(entries) {
       wrapper.appendChild(content);
     } else {
       entry.lines.forEach((line, index) => {
-        const paragraph = document.createElement("p");
-        paragraph.className = `quote-entry__line quote-entry__line--${index === 0 ? "lead" : "follow"}`;
+        const paragraph = document.createElement('p');
+        paragraph.className = `quote-entry__line quote-entry__line--${index === 0 ? 'lead' : 'follow'}`;
         paragraph.textContent = line;
         wrapper.appendChild(paragraph);
       });
@@ -392,40 +361,244 @@ function renderPrimaryEntries(entries) {
 }
 
 function renderEggFooter(entry) {
-  quoteFooterNode.innerHTML = "";
+  quoteFooterNode.innerHTML = '';
   if (!entry) return;
 
-  const chip = document.createElement("span");
-  chip.className = "quote-chip";
+  const chip = document.createElement('span');
+  chip.className = 'quote-chip';
   chip.textContent = entry.lines[0];
   quoteFooterNode.appendChild(chip);
 }
 
+function parseEnvText(text) {
+  const values = {};
+  text.split(/\r?\n/).forEach((rawLine) => {
+    const line = rawLine.trim();
+    if (!line || line.startsWith('#')) return;
+    const index = line.indexOf('=');
+    if (index === -1) return;
+    const key = line.slice(0, index).trim();
+    let value = line.slice(index + 1).trim();
+    if (value.startsWith('"') && value.endsWith('"')) {
+      value = value.slice(1, -1);
+    }
+    values[key] = value;
+  });
+  return values;
+}
+
+function parseTaglineFile(text, showEnglishFirst) {
+  return text
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line && !line.startsWith('#'))
+    .map((line) => {
+      if (line.includes('||')) {
+        const parts = line.split('||').map((part) => part.trim()).filter(Boolean);
+        return showEnglishFirst ? parts : [...parts].reverse();
+      }
+      return [line];
+    });
+}
+
+function parseEggFile(text) {
+  return text
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line && !line.startsWith('#'))
+    .map((line) => [line]);
+}
+
+async function fetchText(url) {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`${url} -> ${response.status}`);
+  }
+  return response.text();
+}
+
+function applyEnvConfig(env) {
+  previewState.config = {
+    ...deepClone(defaultPreviewConfig),
+    titleLine: env.TITLE_LINE || defaultPreviewConfig.titleLine,
+    targetMonth: toInt(env.TARGET_MONTH, defaultPreviewConfig.targetMonth),
+    targetDay: toInt(env.TARGET_DAY, defaultPreviewConfig.targetDay),
+    taglineCountMin: toInt(env.TAGLINE_COUNT_MIN, defaultPreviewConfig.taglineCountMin),
+    taglineCountMax: toInt(env.TAGLINE_COUNT_MAX, defaultPreviewConfig.taglineCountMax),
+    easterEggDailyChance: toInt(env.EASTER_EGG_DAILY_CHANCE, defaultPreviewConfig.easterEggDailyChance),
+    showEnglishFirst: (env.SHOW_ENGLISH_FIRST ?? '1') !== '0',
+    taglineWeights: { ...defaultPreviewConfig.taglineWeights },
+    easterWeights: { ...defaultPreviewConfig.easterWeights },
+  };
+
+  Object.keys(previewState.config.taglineWeights).forEach((key) => {
+    const envKey = `TAGLINE_WEIGHT_${key.toUpperCase()}`;
+    previewState.config.taglineWeights[key] = toInt(env[envKey], previewState.config.taglineWeights[key]);
+  });
+
+  Object.keys(previewState.config.easterWeights).forEach((key) => {
+    const envKey = `EASTER_WEIGHT_${key.toUpperCase()}`;
+    previewState.config.easterWeights[key] = toInt(env[envKey], previewState.config.easterWeights[key]);
+  });
+}
+
+async function loadSourceFiles() {
+  const env = parseEnvText(await fetchText('../App/Resources/Defaults/countdown.env.example'));
+  applyEnvConfig(env);
+
+  const taglinePairs = await Promise.all(
+    sourceManifest.taglines.map(async (name) => {
+      const text = await fetchText(`../App/Resources/Defaults/taglines.d/${name}.txt`);
+      return [name, parseTaglineFile(text, previewState.config.showEnglishFirst)];
+    }),
+  );
+
+  const eggPairs = await Promise.all(
+    sourceManifest.easterEggs.map(async (name) => {
+      const text = await fetchText(`../App/Resources/Defaults/easter_eggs.d/${name}.txt`);
+      return [name, parseEggFile(text)];
+    }),
+  );
+
+  previewState.taglines = Object.fromEntries(taglinePairs);
+  previewState.easterEggs = Object.fromEntries(eggPairs);
+}
+
+function loadSimulatedDate() {
+  const stored = localStorage.getItem(simulatedDateStorageKey);
+  if (stored) {
+    const parsed = parseDateInput(stored);
+    if (parsed) return normalizeDate(parsed);
+  }
+  return currentDayStart();
+}
+
+function saveSimulatedDate(date) {
+  localStorage.setItem(simulatedDateStorageKey, formatInputDate(date));
+}
+
+function updateMetaCounters() {
+  taglineCountNode.textContent = `${sumEntries(previewState.taglines)} 条副标题`;
+  eggCountNode.textContent = `${sumEntries(previewState.easterEggs)} 条小彩蛋`;
+}
+
+function syncJumpButtons(today, target) {
+  const quickTargets = {
+    target,
+    minus30: addDays(target, -30),
+    minus10: addDays(target, -10),
+    august: new Date(target.getFullYear(), 7, 1),
+  };
+
+  jumpButtons.forEach((button) => {
+    const jump = button.dataset.jump;
+    const targetDate = jump ? quickTargets[jump] : null;
+    const active = targetDate && dayStamp(targetDate) === dayStamp(today);
+    button.classList.toggle('is-active', Boolean(active));
+  });
+}
+
 function renderCard() {
-  const today = currentDayStart();
+  const today = loadSimulatedDate();
   const target = makeTarget(today);
   const remainingDaysCount = daysRemaining(today, target);
-  const seedBase = `${dayStamp(today)}::${previewConfig.titleLine}`;
+  const seedBase = `${dayStamp(today)}::${previewState.config.titleLine}`;
   const rerollSeed = currentRerollSeed(today);
   const seedText = rerollSeed ? `${seedBase}::${rerollSeed}` : seedBase;
-
   const entries = pickTaglines(seedText);
   const egg = pickEasterEgg(seedText, today, remainingDaysCount);
-  const primaryEntries = entries;
+  const tone = resolveTone(remainingDaysCount);
 
-  cardNode.dataset.tone = resolveTone(remainingDaysCount);
-  titleNode.textContent = previewConfig.titleLine;
+  cardNode.dataset.tone = tone;
+  titleNode.textContent = previewState.config.titleLine;
   currentBadgeNode.textContent = formatCurrentBadge(today);
+  simDateInput.value = formatInputDate(today);
+  simDateLabelNode.textContent = `模拟日期：${formatFullDateLabel(today)}`;
+  simTargetLabelNode.textContent = `目标日期：${formatTargetLabel(target)}`;
+  toneLabelNode.textContent = toneLabel(tone);
 
+  syncJumpButtons(today, target);
   renderCountdown(remainingDaysCount);
-  renderPrimaryEntries(primaryEntries);
+  renderPrimaryEntries(entries);
   renderEggFooter(egg);
 }
 
-rerollButton.addEventListener("click", () => {
-  const today = currentDayStart();
-  saveRerollSeed(today);
-  renderCard();
-});
+function jumpToPreset(kind) {
+  const current = loadSimulatedDate();
+  const target = makeTarget(current);
 
-renderCard();
+  switch (kind) {
+    case 'target':
+      saveSimulatedDate(target);
+      break;
+    case 'minus30':
+      saveSimulatedDate(addDays(target, -30));
+      break;
+    case 'minus10':
+      saveSimulatedDate(addDays(target, -10));
+      break;
+    case 'august':
+      saveSimulatedDate(new Date(target.getFullYear(), 7, 1));
+      break;
+    default:
+      return;
+  }
+
+  renderCard();
+}
+
+function bindInteractions() {
+  rerollButton.addEventListener('click', () => {
+    const today = loadSimulatedDate();
+    saveRerollSeed(today);
+    renderCard();
+  });
+
+  jumpTodayButton.addEventListener('click', () => {
+    const today = currentDayStart();
+    saveSimulatedDate(today);
+    renderCard();
+  });
+
+  simDateInput.addEventListener('change', (event) => {
+    const nextDate = parseDateInput(event.target.value);
+    if (!nextDate) return;
+    saveSimulatedDate(nextDate);
+    renderCard();
+  });
+
+  shiftButtons.forEach((button) => {
+    button.addEventListener('click', () => {
+      const current = loadSimulatedDate();
+      const delta = toInt(button.dataset.shiftDays, 0);
+      saveSimulatedDate(addDays(current, delta));
+      renderCard();
+    });
+  });
+
+  jumpButtons.forEach((button) => {
+    button.addEventListener('click', () => {
+      const kind = button.dataset.jump;
+      if (kind) jumpToPreset(kind);
+    });
+  });
+}
+
+async function init() {
+  bindInteractions();
+  updateMetaCounters();
+  renderCard();
+
+  try {
+    await loadSourceFiles();
+    updateMetaCounters();
+    sourceStatusNode.textContent = '已读取仓库中的真实文案库和权重。你改完源文件，刷新这里就能看到。';
+  } catch (error) {
+    console.error(error);
+    sourceStatusNode.textContent = '未能读取仓库源文件。请在仓库根目录运行 python3 -m http.server 8000 后再打开预览。';
+  }
+
+  renderCard();
+}
+
+init();
