@@ -84,7 +84,7 @@ body::before {
 .stage {
   width: min(1120px, 100%);
   display: grid;
-  grid-template-columns: minmax(320px, 430px) minmax(360px, 420px);
+  grid-template-columns: minmax(320px, 430px) 400px;
   gap: 54px;
   align-items: start;
 }
@@ -265,11 +265,13 @@ body::before {
   display: grid;
   place-items: center;
   justify-self: end;
+  width: 400px;
 }
 
 .preview-card {
   position: relative;
-  width: min(100%, 400px);
+  width: 400px;
+  max-width: 100%;
   height: 322px;
   padding: 22px 24px;
   border-radius: 30px;
@@ -357,7 +359,7 @@ body::before {
 
 .preview-card__heading-group {
   display: grid;
-  gap: 11px;
+  gap: 12px;
 }
 
 .preview-card__title {
@@ -371,15 +373,16 @@ body::before {
 
 .preview-card__badge {
   justify-self: start;
-  padding: 4px 9px;
+  padding: 6px 12px;
   border-radius: 999px;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
   font-variant-numeric: tabular-nums;
-  line-height: 1;
+  line-height: 1.05;
   color: var(--badge-text);
   background: var(--badge-fill);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28);
 }
 
 .flower-button {
@@ -447,34 +450,38 @@ body::before {
   backdrop-filter: blur(16px);
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  justify-content: center;
+  gap: 9px;
   overflow: hidden;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.26);
 }
 
 .quote-panel__body {
   display: grid;
-  gap: 10px;
-  min-height: 68px;
-  align-content: start;
+  gap: 8px;
+  min-height: 0;
+  align-content: center;
 }
 
 .quote-panel__footer {
-  margin-top: auto;
-  min-height: 24px;
+  min-height: 0;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   overflow: hidden;
+}
+
+.quote-panel__footer[hidden] {
+  display: none;
 }
 
 .quote-entry {
   display: grid;
-  gap: 5px;
+  gap: 4px;
 }
 
 .quote-entry__content {
   display: grid;
-  gap: 5px;
+  gap: 4px;
 }
 
 .quote-entry__line {
@@ -486,12 +493,14 @@ body::before {
   font-family: var(--font-display);
   font-size: 15px;
   font-weight: 700;
+  line-height: 1.34;
   color: var(--ink-main);
 }
 
 .quote-entry__line--follow {
   font-size: 13px;
   font-weight: 600;
+  line-height: 1.38;
   color: #6a403c;
 }
 
@@ -571,6 +580,7 @@ body::before {
 
   .preview-card-shell {
     justify-self: stretch;
+    width: 100%;
   }
 
   .stage__copy {

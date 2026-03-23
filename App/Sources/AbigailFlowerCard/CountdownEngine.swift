@@ -19,7 +19,7 @@ struct CardConfig {
     var easterEggDailyChance: Int = 28
     var easterWeights: [String: Int] = [
         "always": 1,
-        "friday": 2,
+        "thursday": 2,
         "weekend": 2,
         "august": 3,
         "final30": 4,
@@ -393,8 +393,8 @@ final class CountdownEngine {
         switch name {
         case "always":
             return true
-        case "friday":
-            return calendar.component(.weekday, from: today) == 6
+        case "thursday":
+            return calendar.component(.weekday, from: today) == 5
         case "weekend":
             let weekday = calendar.component(.weekday, from: today)
             return weekday == 1 || weekday == 7

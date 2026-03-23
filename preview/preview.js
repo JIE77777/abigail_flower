@@ -15,7 +15,7 @@ const defaultPreviewConfig = {
   },
   easterWeights: {
     always: 1,
-    friday: 2,
+    thursday: 2,
     weekend: 2,
     august: 3,
     final30: 4,
@@ -45,7 +45,7 @@ const simulatedDateStorageKey = 'abigail-flower-preview-simulated-date';
 
 const sourceManifest = {
   taglines: ['bright', 'cookie', 'playful', 'reminders', 'wendy'],
-  easterEggs: ['always', 'august', 'cookie', 'final10', 'final30', 'friday', 'milestones', 'weekend'],
+  easterEggs: ['always', 'august', 'cookie', 'final10', 'final30', 'milestones', 'thursday', 'weekend'],
 };
 
 function deepClone(value) {
@@ -242,8 +242,8 @@ function easterCondition(name, today, remainingDaysCount) {
   switch (name) {
     case 'always':
       return true;
-    case 'friday':
-      return weekday === 5;
+    case 'thursday':
+      return weekday === 4;
     case 'weekend':
       return weekday === 0 || weekday === 6;
     case 'august':
@@ -362,6 +362,7 @@ function renderPrimaryEntries(entries) {
 
 function renderEggFooter(entry) {
   quoteFooterNode.innerHTML = '';
+  quoteFooterNode.hidden = !entry;
   if (!entry) return;
 
   const chip = document.createElement('span');

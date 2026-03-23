@@ -63,13 +63,13 @@ struct CardView: View {
 
     private var header: some View {
         HStack(alignment: .top, spacing: 16) {
-            VStack(alignment: .leading, spacing: 11) {
+            VStack(alignment: .leading, spacing: 12) {
                 Text(currentDateBadgeText)
-                    .font(.system(size: 11, weight: .semibold, design: .rounded))
+                    .font(.system(size: 13, weight: .bold, design: .rounded))
                     .monospacedDigit()
                     .foregroundColor(theme.badgeText)
-                    .padding(.horizontal, 9)
-                    .padding(.vertical, 4)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
                     .background(
                         Capsule()
                             .fill(theme.badgeFill)
@@ -136,22 +136,22 @@ struct CardView: View {
     }
 
     private var quoteBlock: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            VStack(alignment: .leading, spacing: 10) {
+        HStack(alignment: .center, spacing: 0) {
+            VStack(alignment: .leading, spacing: 9) {
                 ForEach(primaryEntries) { entry in
                     EntryView(entry: entry, accentColor: theme.quoteAccent)
+                }
+
+                if let eggLine = easterEggLine {
+                    EggChip(text: eggLine, accentColor: theme.quoteAccent)
                 }
             }
 
             Spacer(minLength: 0)
-
-            if let eggLine = easterEggLine {
-                EggChip(text: eggLine, accentColor: theme.quoteAccent)
-            }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 15)
-        .frame(maxWidth: .infinity, minHeight: quotePanelHeight, maxHeight: quotePanelHeight, alignment: .topLeading)
+        .frame(maxWidth: .infinity, minHeight: quotePanelHeight, maxHeight: quotePanelHeight, alignment: .center)
         .background(
             RoundedRectangle(cornerRadius: 22, style: .continuous)
                 .fill(theme.quotePanelFill)
