@@ -25,3 +25,33 @@ bash scripts/build_app.sh
 ```bash
 bash scripts/package_release.sh
 ```
+
+## 使用构建好的安装包
+如果你已经拿到构建好的安装包，就不需要本地装 Swift 或从源码编译。
+
+### 从 GitHub Actions 下载
+1. 打开仓库的 `Actions`
+2. 进入一次成功的 `build-macos-app`
+3. 下载 artifact：`abigail-flower-mac-package`
+4. 解压后会得到 `abigail-flower-mac-package.zip`
+
+### 安装
+1. 解压 `abigail-flower-mac-package.zip`
+2. 进入解压后的目录
+3. 双击 `INSTALL.command`
+4. 如果 macOS 提示安全限制，右键 `INSTALL.command` 选择“打开”
+5. 安装完成后，app 会出现在桌面上
+
+### 安装后会发生什么
+- app 会被复制到 `~/Applications/阿比盖尔之花.app`
+- 自动启动配置会写到 `~/Library/LaunchAgents/com.abigailflower.card.plist`
+- 默认配置和文案库会放到 `~/Library/Application Support/AbigailFlowerCard`
+
+### 卸载
+1. 打开安装包目录里的 `UNINSTALL.command`
+2. 双击运行
+
+它会删除：
+- `~/Applications/阿比盖尔之花.app`
+- `~/Library/LaunchAgents/com.abigailflower.card.plist`
+- `~/Library/Application Support/AbigailFlowerCard`

@@ -70,9 +70,19 @@ chmod +x "$PKG_DIR/UNINSTALL.command"
 cat > "$PKG_DIR/README.md" <<'README'
 # 阿比盖尔之花
 
+## 安装
 1. 双击 `INSTALL.command`
-2. 安装完成后，卡片会出现在桌面上
-3. 点卡片右上角的小花，可以今天再抽一句
+2. 如果 macOS 提示安全限制，右键 `INSTALL.command` 选择“打开”
+3. 安装完成后，卡片会出现在桌面上
+
+## 安装后会发生什么
+- app 会被安装到 `~/Applications/阿比盖尔之花.app`
+- 自动启动配置会写到 `~/Library/LaunchAgents/com.abigailflower.card.plist`
+- 默认配置和文案库会放到 `~/Library/Application Support/AbigailFlowerCard`
+
+## 卸载
+1. 双击 `UNINSTALL.command`
+2. 卸载脚本会删除 app、自动启动项和本地配置
 README
 
 ( cd "$OUT_DIR" && /usr/bin/zip -qry "$ZIP_PATH" "$(basename "$PKG_DIR")" )
