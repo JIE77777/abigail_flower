@@ -162,9 +162,8 @@ const easterEggs = {
 
 const cardNode = document.querySelector(".preview-card");
 const titleNode = document.getElementById("card-title");
-const targetBadgeNode = document.getElementById("target-badge");
+const currentBadgeNode = document.getElementById("current-badge");
 const quotePanelNode = document.getElementById("quote-panel");
-const quoteTagNode = document.getElementById("quote-tag");
 const quoteFooterNode = document.getElementById("quote-footer");
 const rerollButton = document.getElementById("reroll-button");
 const countdownBlock = document.getElementById("countdown-block");
@@ -179,6 +178,13 @@ function dayStamp(date) {
 function currentDayStart() {
   const now = new Date();
   return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+}
+
+function formatCurrentBadge(date) {
+  const weekdays = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${month}.${day} ${weekdays[date.getDay()]}`;
 }
 
 function makeTarget(today) {
@@ -387,12 +393,10 @@ function renderCard() {
   const entries = pickTaglines(seedText);
   const egg = pickEasterEgg(seedText, today, remainingDaysCount);
   const primaryEntries = entries;
-  const hasBilingual = primaryEntries.some((entry) => entry.lines.length > 1);
 
   cardNode.dataset.tone = resolveTone(remainingDaysCount);
   titleNode.textContent = previewConfig.titleLine;
-  targetBadgeNode.textContent = `${String(previewConfig.targetMonth).padStart(2, "0")} · ${String(previewConfig.targetDay).padStart(2, "0")}`;
-  quoteTagNode.hidden = !hasBilingual;
+  currentBadgeNode.textContent = formatCurrentBadge(today);
 
   renderCountdown(remainingDaysCount);
   renderPrimaryEntries(primaryEntries);

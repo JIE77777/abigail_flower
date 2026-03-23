@@ -11,8 +11,15 @@ struct CardView: View {
         CardTheme.resolve(daysRemaining: viewModel.content.daysRemaining)
     }
 
-    private var targetBadgeText: String {
-        String(format: "%02d · %02d", viewModel.config.targetMonth, viewModel.config.targetDay)
+    private var currentDateBadgeText: String {
+        let today = Date()
+        let calendar = Calendar.current
+        let month = calendar.component(.month, from: today)
+        let day = calendar.component(.day, from: today)
+        let weekday = calendar.component(.weekday, from: today)
+        let weekdays = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"]
+        let weekdayText = weekdays[max(0, min(weekdays.count - 1, weekday - 1))]
+        return String(format: "%02d.%02d %@", month, day, weekdayText)
     }
 
     private var primaryEntries: [CardEntry] {
@@ -21,10 +28,6 @@ struct CardView: View {
 
     private var easterEggLine: String? {
         viewModel.content.entries.first(where: isEasterEgg)?.lines.first
-    }
-
-    private var hasBilingualQuote: Bool {
-        primaryEntries.contains { $0.lines.count > 1 }
     }
 
     var body: some View {
@@ -65,7 +68,7 @@ struct CardView: View {
                     .font(.system(size: 18, weight: .semibold, design: .serif))
                     .foregroundColor(Color(red: 0.34, green: 0.20, blue: 0.19))
 
-                Text(targetBadgeText)
+                Text(currentDateBadgeText)
                     .font(.system(size: 11, weight: .semibold, design: .rounded))
                     .foregroundColor(theme.badgeText)
                     .padding(.horizontal, 9)
@@ -131,28 +134,6 @@ struct CardView: View {
 
     private var quoteBlock: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 8) {
-                Text("今日摘句")
-                    .font(.system(size: 11, weight: .bold, design: .rounded))
-                    .tracking(0.6)
-                    .foregroundColor(theme.sectionLabelText)
-
-                if hasBilingualQuote {
-                    Text("WENDY 摘录")
-                        .font(.system(size: 10, weight: .bold, design: .rounded))
-                        .tracking(0.8)
-                        .foregroundColor(theme.quoteAccent)
-                        .padding(.horizontal, 7)
-                        .padding(.vertical, 4)
-                        .background(
-                            Capsule()
-                                .fill(theme.quoteTagFill)
-                        )
-                }
-
-                Spacer(minLength: 0)
-            }
-
             VStack(alignment: .leading, spacing: 10) {
                 ForEach(primaryEntries) { entry in
                     EntryView(entry: entry, accentColor: theme.quoteAccent)
@@ -302,8 +283,6 @@ private struct CardTheme {
     let buttonShadow: Color
     let unitColor: Color
     let quoteAccent: Color
-    let quoteTagFill: Color
-    let sectionLabelText: Color
     let quotePanelFill: Color
     let quotePanelStroke: Color
     let cardStroke: Color
@@ -325,8 +304,6 @@ private struct CardTheme {
                 buttonShadow: Color(red: 0.57, green: 0.40, blue: 0.24).opacity(0.15),
                 unitColor: Color(red: 0.58, green: 0.39, blue: 0.24),
                 quoteAccent: Color(red: 0.79, green: 0.60, blue: 0.34),
-                quoteTagFill: Color(red: 0.89, green: 0.80, blue: 0.61).opacity(0.24),
-                sectionLabelText: Color(red: 0.58, green: 0.41, blue: 0.27),
                 quotePanelFill: Color.white.opacity(0.55),
                 quotePanelStroke: Color.white.opacity(0.52),
                 cardStroke: Color.white.opacity(0.44),
@@ -347,8 +324,6 @@ private struct CardTheme {
                 buttonShadow: Color(red: 0.55, green: 0.30, blue: 0.33).opacity(0.14),
                 unitColor: Color(red: 0.57, green: 0.33, blue: 0.35),
                 quoteAccent: Color(red: 0.77, green: 0.46, blue: 0.49),
-                quoteTagFill: Color(red: 0.86, green: 0.64, blue: 0.66).opacity(0.22),
-                sectionLabelText: Color(red: 0.58, green: 0.34, blue: 0.35),
                 quotePanelFill: Color.white.opacity(0.53),
                 quotePanelStroke: Color.white.opacity(0.51),
                 cardStroke: Color.white.opacity(0.43),
@@ -369,8 +344,6 @@ private struct CardTheme {
                 buttonShadow: Color(red: 0.55, green: 0.37, blue: 0.20).opacity(0.14),
                 unitColor: Color(red: 0.58, green: 0.38, blue: 0.26),
                 quoteAccent: Color(red: 0.79, green: 0.57, blue: 0.33),
-                quoteTagFill: Color(red: 0.89, green: 0.77, blue: 0.55).opacity(0.22),
-                sectionLabelText: Color(red: 0.57, green: 0.40, blue: 0.26),
                 quotePanelFill: Color.white.opacity(0.53),
                 quotePanelStroke: Color.white.opacity(0.51),
                 cardStroke: Color.white.opacity(0.43),
@@ -390,8 +363,6 @@ private struct CardTheme {
             buttonShadow: Color(red: 0.45, green: 0.27, blue: 0.23).opacity(0.12),
             unitColor: Color(red: 0.49, green: 0.31, blue: 0.29),
             quoteAccent: Color(red: 0.68, green: 0.52, blue: 0.49),
-            quoteTagFill: Color(red: 0.84, green: 0.72, blue: 0.69).opacity(0.18),
-            sectionLabelText: Color(red: 0.53, green: 0.38, blue: 0.36),
             quotePanelFill: Color.white.opacity(0.52),
             quotePanelStroke: Color.white.opacity(0.52),
             cardStroke: Color.white.opacity(0.44),

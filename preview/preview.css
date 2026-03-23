@@ -318,29 +318,6 @@ body::before {
   overflow: hidden;
 }
 
-.quote-panel__header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.quote-panel__label {
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  color: var(--badge-text);
-}
-
-.quote-panel__tag {
-  padding: 4px 7px;
-  border-radius: 999px;
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  color: var(--accent);
-  background: var(--accent-soft);
-}
-
 .quote-panel__body {
   display: grid;
   gap: 10px;
