@@ -59,7 +59,6 @@ const previewState = {
 };
 
 const cardNode = document.querySelector('.preview-card');
-const titleNode = document.getElementById('card-title');
 const currentBadgeYearNode = document.getElementById('current-badge-year');
 const currentBadgeDateNode = document.getElementById('current-badge-date');
 const currentBadgeWeekdayNode = document.getElementById('current-badge-weekday');
@@ -311,8 +310,10 @@ function resolveTone(days) {
 }
 
 function renderCountdown(days) {
+  const titleLine = previewState.config.titleLine;
   if (days === 0) {
     countdownBlock.innerHTML = `
+      <p class="preview-card__title preview-card__title--count">${titleLine}</p>
       <div class="preview-card__countline">
         <span class="preview-card__days">今天</span>
       </div>
@@ -324,6 +325,7 @@ function renderCountdown(days) {
   }
 
   countdownBlock.innerHTML = `
+    <p class="preview-card__title preview-card__title--count">${titleLine}</p>
     <div class="preview-card__countline">
       <span class="preview-card__days">${days}</span>
       <span class="preview-card__unit">天</span>
@@ -519,7 +521,6 @@ function renderCard() {
   const badgeParts = currentDateCardParts(today);
 
   cardNode.dataset.tone = tone;
-  titleNode.textContent = previewState.config.titleLine;
   currentBadgeYearNode.textContent = badgeParts.year;
   currentBadgeDateNode.textContent = badgeParts.date;
   currentBadgeWeekdayNode.textContent = badgeParts.weekday;

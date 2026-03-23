@@ -5,7 +5,7 @@ struct CardView: View {
     @ObservedObject var viewModel: CardViewModel
     @State private var isFlowerHovered = false
 
-    private let quotePanelHeight: CGFloat = 96
+    private let quotePanelHeight: CGFloat = 90
 
     private var theme: CardTheme {
         CardTheme.resolve(daysRemaining: viewModel.content.daysRemaining)
@@ -40,7 +40,7 @@ struct CardView: View {
             backgroundLayer
             decorativeFlower
 
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 10) {
                 header
                 countdownBlock
                 Spacer(minLength: 0)
@@ -68,16 +68,7 @@ struct CardView: View {
 
     private var header: some View {
         HStack(alignment: .top, spacing: 16) {
-            HStack(alignment: .bottom, spacing: 14) {
-                currentDateBadge
-
-                Text(viewModel.content.title)
-                    .font(.system(size: 20, weight: .semibold, design: .serif))
-                    .foregroundColor(Color(red: 0.34, green: 0.20, blue: 0.19))
-                    .tracking(0.2)
-                    .padding(.bottom, 8)
-            }
-
+            currentDateBadge
             Spacer(minLength: 0)
 
             Button(action: viewModel.reroll) {
@@ -116,8 +107,8 @@ struct CardView: View {
                 .background(
                     LinearGradient(
                         colors: [
-                            Color(red: 0.51, green: 0.38, blue: 0.36).opacity(0.92),
-                            Color(red: 0.42, green: 0.30, blue: 0.29).opacity(0.94),
+                            Color(red: 0.48, green: 0.37, blue: 0.36).opacity(0.86),
+                            Color(red: 0.40, green: 0.30, blue: 0.29).opacity(0.90),
                         ],
                         startPoint: .top,
                         endPoint: .bottom
@@ -126,32 +117,38 @@ struct CardView: View {
 
             VStack(spacing: 4) {
                 Text(currentDateCard.date)
-                    .font(.system(size: 22, weight: .bold, design: .rounded))
+                    .font(.system(size: 21, weight: .bold, design: .rounded))
                     .monospacedDigit()
                     .tracking(-0.9)
                     .foregroundColor(Color(red: 0.34, green: 0.20, blue: 0.19))
 
                 Text(currentDateCard.weekday)
-                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .font(.system(size: 11, weight: .semibold, design: .rounded))
                     .tracking(0.6)
                     .foregroundColor(theme.badgeText)
             }
             .frame(maxWidth: .infinity)
-            .padding(.top, 9)
-            .padding(.bottom, 9)
-            .background(Color.white.opacity(0.64))
+            .padding(.top, 8)
+            .padding(.bottom, 8)
+            .background(Color(red: 1.0, green: 0.98, blue: 0.96).opacity(0.70))
         }
-        .frame(width: 96)
+        .frame(width: 92)
         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(Color.white.opacity(0.34), lineWidth: 1)
+                .stroke(Color(red: 0.82, green: 0.71, blue: 0.67).opacity(0.16), lineWidth: 1)
         )
-        .shadow(color: Color(red: 0.33, green: 0.19, blue: 0.17).opacity(0.08), radius: 12, x: 0, y: 8)
+        .shadow(color: Color(red: 0.33, green: 0.19, blue: 0.17).opacity(0.06), radius: 10, x: 0, y: 7)
     }
 
     private var countdownBlock: some View {
-        VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: 5) {
+            Text(viewModel.content.title)
+                .font(.system(size: 18, weight: .semibold, design: .serif))
+                .foregroundColor(Color(red: 0.34, green: 0.20, blue: 0.19))
+                .tracking(0.3)
+                .padding(.leading, 2)
+
             if viewModel.content.daysRemaining == 0 {
                 Text("今天")
                     .font(.system(size: 78, weight: .bold, design: .rounded))
@@ -162,16 +159,17 @@ struct CardView: View {
                     .font(.system(size: 24, weight: .semibold, design: .rounded))
                     .foregroundColor(theme.unitColor)
             } else {
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                HStack(alignment: .lastTextBaseline, spacing: 6) {
                     Text("\(viewModel.content.daysRemaining)")
-                        .font(.system(size: 92, weight: .bold, design: .rounded))
+                        .font(.system(size: 94, weight: .bold, design: .rounded))
                         .foregroundColor(Color(red: 0.18, green: 0.10, blue: 0.10))
-                        .tracking(-2.8)
+                        .tracking(-3.1)
                         .minimumScaleFactor(0.82)
 
                     Text("天")
-                        .font(.system(size: 26, weight: .semibold, design: .rounded))
+                        .font(.system(size: 24, weight: .semibold, design: .rounded))
                         .foregroundColor(theme.unitColor)
+                        .padding(.bottom, 8)
                 }
             }
         }
@@ -179,7 +177,7 @@ struct CardView: View {
 
     private var quoteBlock: some View {
         HStack(alignment: .center, spacing: 0) {
-            VStack(alignment: .leading, spacing: 7) {
+            VStack(alignment: .leading, spacing: 6) {
                 ForEach(primaryEntries) { entry in
                     EntryView(entry: entry, accentColor: theme.quoteAccent)
                 }
@@ -191,24 +189,27 @@ struct CardView: View {
 
             Spacer(minLength: 0)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 13)
+        .padding(.horizontal, 15)
+        .padding(.vertical, 12)
         .frame(maxWidth: .infinity, minHeight: quotePanelHeight, maxHeight: quotePanelHeight, alignment: .center)
         .background(
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
                 .fill(theme.quotePanelFill)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
                         .fill(
                             LinearGradient(
-                                colors: [Color.white.opacity(0.18), Color.white.opacity(0.02)],
+                                colors: [
+                                    Color(red: 1.0, green: 0.99, blue: 0.98).opacity(0.20),
+                                    Color.white.opacity(0.02),
+                                ],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             )
                         )
                 )
                 .overlay(
-                    RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
                         .stroke(theme.quotePanelStroke, lineWidth: 1)
                 )
         )
@@ -287,16 +288,16 @@ private struct EntryView: View {
                                 .font(.system(size: 15, weight: .semibold, design: .serif))
                                 .italic()
                                 .foregroundColor(Color(red: 0.28, green: 0.17, blue: 0.16))
-                                .lineSpacing(2)
+                                .lineSpacing(1)
                                 .lineLimit(2)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
 
                         if entry.lines.count > 1 {
                             Text(entry.lines[1])
-                                .font(.system(size: 13, weight: .medium, design: .default))
-                                .foregroundColor(Color(red: 0.44, green: 0.28, blue: 0.27))
-                                .lineSpacing(2)
+                                .font(.system(size: 12, weight: .medium, design: .default))
+                                .foregroundColor(Color(red: 0.46, green: 0.31, blue: 0.29))
+                                .lineSpacing(1)
                                 .lineLimit(2)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
@@ -307,9 +308,9 @@ private struct EntryView: View {
         } else {
             if let first = entry.lines.first {
                 Text(first)
-                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    .font(.system(size: 16, weight: .semibold, design: .serif))
                     .foregroundColor(Color(red: 0.28, green: 0.17, blue: 0.16))
-                    .lineSpacing(2)
+                    .lineSpacing(1)
                     .lineLimit(3)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -323,11 +324,11 @@ private struct EggChip: View {
 
     var body: some View {
         Text(text)
-            .font(.system(size: 12, weight: .bold, design: .rounded))
-            .foregroundColor(Color(red: 0.55, green: 0.39, blue: 0.36))
+            .font(.system(size: 11, weight: .bold, design: .rounded))
+            .foregroundColor(Color(red: 0.53, green: 0.38, blue: 0.35))
             .lineLimit(1)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
             .background(
                 Capsule()
                     .fill(accentColor.opacity(0.12))
@@ -367,8 +368,8 @@ private struct CardTheme {
                 buttonShadow: Color(red: 0.57, green: 0.40, blue: 0.24).opacity(0.15),
                 unitColor: Color(red: 0.58, green: 0.39, blue: 0.24),
                 quoteAccent: Color(red: 0.79, green: 0.60, blue: 0.34),
-                quotePanelFill: Color.white.opacity(0.55),
-                quotePanelStroke: Color.white.opacity(0.52),
+                quotePanelFill: Color(red: 0.99, green: 0.96, blue: 0.92).opacity(0.56),
+                quotePanelStroke: Color(red: 0.82, green: 0.69, blue: 0.47).opacity(0.18),
                 cardStroke: Color.white.opacity(0.44),
                 cardShadow: Color(red: 0.45, green: 0.30, blue: 0.18).opacity(0.17),
                 watermarkOpacity: 0.06
@@ -387,8 +388,8 @@ private struct CardTheme {
                 buttonShadow: Color(red: 0.55, green: 0.30, blue: 0.33).opacity(0.14),
                 unitColor: Color(red: 0.57, green: 0.33, blue: 0.35),
                 quoteAccent: Color(red: 0.77, green: 0.46, blue: 0.49),
-                quotePanelFill: Color.white.opacity(0.53),
-                quotePanelStroke: Color.white.opacity(0.51),
+                quotePanelFill: Color(red: 0.98, green: 0.94, blue: 0.92).opacity(0.54),
+                quotePanelStroke: Color(red: 0.76, green: 0.52, blue: 0.53).opacity(0.17),
                 cardStroke: Color.white.opacity(0.43),
                 cardShadow: Color(red: 0.44, green: 0.24, blue: 0.27).opacity(0.16),
                 watermarkOpacity: 0.06
@@ -407,8 +408,8 @@ private struct CardTheme {
                 buttonShadow: Color(red: 0.55, green: 0.37, blue: 0.20).opacity(0.14),
                 unitColor: Color(red: 0.58, green: 0.38, blue: 0.26),
                 quoteAccent: Color(red: 0.79, green: 0.57, blue: 0.33),
-                quotePanelFill: Color.white.opacity(0.53),
-                quotePanelStroke: Color.white.opacity(0.51),
+                quotePanelFill: Color(red: 0.99, green: 0.96, blue: 0.91).opacity(0.54),
+                quotePanelStroke: Color(red: 0.78, green: 0.59, blue: 0.37).opacity(0.18),
                 cardStroke: Color.white.opacity(0.43),
                 cardShadow: Color(red: 0.48, green: 0.33, blue: 0.19).opacity(0.16),
                 watermarkOpacity: 0.06
@@ -426,8 +427,8 @@ private struct CardTheme {
             buttonShadow: Color(red: 0.45, green: 0.27, blue: 0.23).opacity(0.12),
             unitColor: Color(red: 0.49, green: 0.31, blue: 0.29),
             quoteAccent: Color(red: 0.68, green: 0.52, blue: 0.49),
-            quotePanelFill: Color.white.opacity(0.52),
-            quotePanelStroke: Color.white.opacity(0.52),
+            quotePanelFill: Color(red: 0.99, green: 0.96, blue: 0.94).opacity(0.53),
+            quotePanelStroke: Color(red: 0.74, green: 0.61, blue: 0.57).opacity(0.16),
             cardStroke: Color.white.opacity(0.44),
             cardShadow: Color(red: 0.36, green: 0.22, blue: 0.20).opacity(0.16),
             watermarkOpacity: 0.05
