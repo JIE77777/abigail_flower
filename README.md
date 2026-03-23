@@ -10,6 +10,7 @@
 
 ## 目录
 - `App/`：SwiftUI + AppKit 源码和资源
+- `preview/`：不依赖 macOS 的网页模拟预览
 - `scripts/build_app.sh`：在本地 Mac 上构建 `.app`
 - `scripts/package_release.sh`：生成可分发 zip 包
 - `.github/workflows/build-macos.yml`：在 GitHub Actions 的 macOS runner 上构建发布包

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>阿比盖尔之花 · 网页模拟预览</title>
+    <link rel="stylesheet" href="./preview.css" />
+  </head>
+  <body>
+    <main class="scene">
+      <div class="scene__glow scene__glow--left"></div>
+      <div class="scene__glow scene__glow--right"></div>
+
+      <section class="stage">
+        <aside class="stage__note">
+          <p class="stage__eyebrow">网页模拟版</p>
+          <h1>阿比盖尔之花</h1>
+          <p class="stage__copy">
+            这是原生 macOS 卡片 app 的网页模拟预览。它会按今天的日期计算倒计时，
+            并模拟“点花朵，今天再换一句”的节奏。
+          </p>
+          <div class="stage__meta">
+            <span>84 条副标题</span>
+            <span>18 条小彩蛋</span>
+            <span>原生卡片布局近似还原</span>
+          </div>
+        </aside>
+
+        <section class="preview-card-shell" aria-label="倒计时卡片预览">
+          <div class="preview-card">
+            <img
+              class="preview-card__watermark"
+              src="../App/Resources/Defaults/icons/abigail_flower_level3.png"
+              alt=""
+            />
+
+            <header class="preview-card__header">
+              <div>
+                <p class="preview-card__title" id="card-title">距离 8.31</p>
+                <p class="preview-card__hint">点花朵，今天再换一句</p>
+              </div>
+
+              <button class="flower-button" id="reroll-button" type="button" aria-label="今天再换一句">
+                <img src="../App/Resources/Defaults/icons/abigail_flower_level3.png" alt="阿比盖尔之花" />
+              </button>
+            </header>
+
+            <section class="preview-card__countdown" id="countdown-block">
+              <div class="preview-card__countline">
+                <span class="preview-card__days" id="days-number">160</span>
+                <span class="preview-card__unit">天</span>
+              </div>
+              <p class="preview-card__subline" id="days-subline">一步一步靠近 8 月 31 日</p>
+            </section>
+
+            <section class="quote-panel" id="quote-panel"></section>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <script src="./preview.js"></script>
+  </body>
+</html>
