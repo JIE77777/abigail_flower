@@ -279,10 +279,13 @@ body::before {
   display: flex;
   flex-direction: column;
   background:
+    radial-gradient(circle at 78% 14%, rgba(255, 255, 255, 0.16), transparent 20%),
     radial-gradient(circle at 0% 0%, rgba(255, 255, 255, 0.34), transparent 42%),
     linear-gradient(140deg, var(--paper-top), var(--paper-mid) 46%, var(--paper-bottom));
   border: 1px solid var(--line-soft);
-  box-shadow: 0 24px 52px var(--card-shadow);
+  box-shadow:
+    0 30px 60px rgba(39, 21, 21, 0.14),
+    0 12px 22px var(--card-shadow);
 }
 
 .preview-card[data-tone="milestone"] {
@@ -324,6 +327,17 @@ body::before {
   inset: 0;
   border-radius: inherit;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.48);
+  pointer-events: none;
+}
+
+.preview-card::before {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border-radius: 29px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.16), transparent 22%),
+    radial-gradient(circle at 80% 82%, rgba(122, 84, 64, 0.05), transparent 22%);
   pointer-events: none;
 }
 
@@ -374,23 +388,23 @@ body::before {
 }
 
 .preview-card__title--count {
-  font-size: 18px;
-  letter-spacing: 0.02em;
+  font-size: 17px;
+  letter-spacing: 0.04em;
   padding-left: 2px;
-  margin-bottom: 2px;
+  margin-bottom: 4px;
   white-space: nowrap;
 }
 
 .preview-card__badge {
   width: 88px;
-  border-radius: 20px;
+  border-radius: 18px;
   overflow: hidden;
   display: grid;
-  background: rgba(255, 251, 247, 0.72);
-  border: 1px solid rgba(174, 133, 128, 0.16);
+  background: rgba(255, 252, 248, 0.78);
+  border: 1px solid rgba(174, 133, 128, 0.14);
   box-shadow:
-    0 8px 18px rgba(84, 47, 40, 0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.42);
+    0 10px 20px rgba(84, 47, 40, 0.07),
+    inset 0 1px 0 rgba(255, 255, 255, 0.58);
 }
 
 .preview-card__badge-year,
@@ -406,14 +420,14 @@ body::before {
   font-weight: 800;
   letter-spacing: 0.18em;
   color: rgba(255, 250, 245, 0.96);
-  background: linear-gradient(180deg, rgba(122, 95, 92, 0.86), rgba(102, 76, 73, 0.90));
+  background: linear-gradient(180deg, rgba(118, 93, 90, 0.92), rgba(97, 73, 70, 0.94));
 }
 
 .preview-card__badge-date {
-  padding: 8px 10px 3px;
-  font-size: 21px;
+  padding: 9px 10px 3px;
+  font-size: 20px;
   font-weight: 800;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.03em;
   line-height: 1;
   font-variant-numeric: tabular-nums;
   color: var(--ink-main);
@@ -421,9 +435,9 @@ body::before {
 
 .preview-card__badge-weekday {
   padding: 3px 10px 9px;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.10em;
   color: var(--badge-text);
 }
 
@@ -459,50 +473,53 @@ body::before {
 .preview-card__countdown {
   margin-top: 0;
   display: grid;
-  gap: 5px;
+  gap: 4px;
   max-width: none;
   min-width: 0;
-  padding-top: 6px;
+  padding-top: 8px;
 }
 
 .preview-card__countline {
   display: flex;
   align-items: flex-end;
-  gap: 6px;
+  gap: 4px;
 }
 
 .preview-card__days {
-  font-size: clamp(82px, 15vw, 94px);
-  line-height: 0.84;
-  letter-spacing: -0.075em;
+  font-size: clamp(82px, 15vw, 92px);
+  line-height: 0.82;
+  letter-spacing: -0.08em;
   font-weight: 800;
   color: var(--ink-strong);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .preview-card__unit {
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 700;
   line-height: 1.02;
   color: var(--badge-text);
+  transform: translateY(-6px);
 }
 
 .quote-panel {
   margin-top: auto;
-  padding: 12px 14px 12px 15px;
-  height: 90px;
-  border-radius: 20px;
+  padding: 13px 14px 13px 16px;
+  height: 94px;
+  border-radius: 22px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(250, 241, 235, 0.72));
-  border: 1px solid rgba(190, 163, 152, 0.30);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.90), rgba(250, 241, 235, 0.76));
+  border: 1px solid rgba(190, 163, 152, 0.26);
   backdrop-filter: blur(16px);
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) 1px auto;
   align-items: center;
   gap: 12px;
   overflow: hidden;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.48),
-    0 14px 26px rgba(84, 47, 40, 0.08);
+    inset 0 1px 0 rgba(255, 255, 255, 0.56),
+    inset 0 -10px 20px rgba(158, 126, 111, 0.04),
+    0 18px 30px rgba(84, 47, 40, 0.10);
 }
 
 .quote-panel__content {
@@ -510,6 +527,7 @@ body::before {
   display: grid;
   gap: 6px;
   align-content: center;
+  padding-right: 2px;
 }
 
 .quote-panel__body {
@@ -530,19 +548,28 @@ body::before {
   display: none;
 }
 
+.quote-panel__divider {
+  display: block;
+  width: 1px;
+  height: 38px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(166, 125, 115, 0.04), rgba(166, 125, 115, 0.28), rgba(166, 125, 115, 0.04));
+}
+
 .flower-button--embedded {
-  width: 36px;
-  height: 36px;
-  margin-right: 2px;
-  background: rgba(255, 250, 246, 0.74);
+  width: 34px;
+  height: 34px;
+  margin-right: 1px;
+  background: rgba(255, 251, 247, 0.86);
+  border-color: rgba(174, 133, 128, 0.22);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.56),
-    0 8px 16px rgba(84, 47, 40, 0.08);
+    inset 0 1px 0 rgba(255, 255, 255, 0.68),
+    0 8px 14px rgba(84, 47, 40, 0.08);
 }
 
 .flower-button--embedded img {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
 }
 
 .quote-entry {
@@ -562,17 +589,17 @@ body::before {
 
 .quote-entry__line--lead {
   font-family: var(--font-serif);
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
-  line-height: 1.28;
+  line-height: 1.32;
   color: var(--ink-main);
 }
 
 .quote-entry__line--follow {
   font-size: 12px;
-  font-weight: 600;
-  line-height: 1.34;
-  color: #75504b;
+  font-weight: 500;
+  line-height: 1.36;
+  color: #7a5750;
 }
 
 .quote-entry--bilingual {
@@ -628,12 +655,13 @@ body::before {
   display: inline-flex;
   align-items: center;
   max-width: 100%;
-  padding: 4px 8px;
+  padding: 4px 9px;
   border-radius: 999px;
   font-size: 11px;
   font-weight: 700;
   color: #88615b;
-  background: rgba(174, 133, 128, 0.12);
+  background: rgba(174, 133, 128, 0.10);
+  border: 1px solid rgba(174, 133, 128, 0.10);
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;

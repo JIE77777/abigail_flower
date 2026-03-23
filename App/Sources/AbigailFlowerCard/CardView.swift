@@ -5,7 +5,7 @@ struct CardView: View {
     @ObservedObject var viewModel: CardViewModel
     @State private var isFlowerHovered = false
 
-    private let quotePanelHeight: CGFloat = 90
+    private let quotePanelHeight: CGFloat = 94
 
     private var theme: CardTheme {
         CardTheme.resolve(daysRemaining: viewModel.content.daysRemaining)
@@ -98,7 +98,7 @@ struct CardView: View {
             }
             .background(
                 Circle()
-                    .fill(isEmbedded ? Color.white.opacity(0.22) : Color.clear)
+                    .fill(isEmbedded ? Color.white.opacity(0.28) : Color.clear)
             )
             .shadow(
                 color: theme.buttonShadow.opacity(isEmbedded ? 0.72 : 1.0),
@@ -136,36 +136,36 @@ struct CardView: View {
 
             VStack(spacing: 4) {
                 Text(currentDateCard.date)
-                    .font(.system(size: 21, weight: .bold, design: .rounded))
+                    .font(.system(size: 20, weight: .bold, design: .rounded))
                     .monospacedDigit()
-                    .tracking(-0.9)
+                    .tracking(-0.7)
                     .foregroundColor(Color(red: 0.34, green: 0.20, blue: 0.19))
 
                 Text(currentDateCard.weekday)
-                    .font(.system(size: 11, weight: .semibold, design: .rounded))
-                    .tracking(0.6)
+                    .font(.system(size: 10, weight: .semibold, design: .rounded))
+                    .tracking(0.8)
                     .foregroundColor(theme.badgeText)
             }
             .frame(maxWidth: .infinity)
-            .padding(.top, 8)
+            .padding(.top, 9)
             .padding(.bottom, 8)
-            .background(Color(red: 1.0, green: 0.98, blue: 0.96).opacity(0.70))
+            .background(Color(red: 1.0, green: 0.985, blue: 0.97).opacity(0.78))
         }
         .frame(width: 88)
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(Color(red: 0.82, green: 0.71, blue: 0.67).opacity(0.16), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(Color(red: 0.82, green: 0.71, blue: 0.67).opacity(0.14), lineWidth: 1)
         )
-        .shadow(color: Color(red: 0.33, green: 0.19, blue: 0.17).opacity(0.06), radius: 10, x: 0, y: 7)
+        .shadow(color: Color(red: 0.33, green: 0.19, blue: 0.17).opacity(0.07), radius: 12, x: 0, y: 8)
     }
 
     private var countdownBlock: some View {
-        VStack(alignment: .leading, spacing: 5) {
+        VStack(alignment: .leading, spacing: 4) {
             Text(viewModel.content.title)
-                .font(.system(size: 18, weight: .semibold, design: .serif))
+                .font(.system(size: 17, weight: .semibold, design: .serif))
                 .foregroundColor(Color(red: 0.34, green: 0.20, blue: 0.19))
-                .tracking(0.3)
+                .tracking(0.7)
                 .padding(.leading, 2)
 
             if viewModel.content.daysRemaining == 0 {
@@ -180,24 +180,24 @@ struct CardView: View {
             } else {
                 HStack(alignment: .lastTextBaseline, spacing: 6) {
                     Text("\(viewModel.content.daysRemaining)")
-                        .font(.system(size: 94, weight: .bold, design: .rounded))
+                        .font(.system(size: 92, weight: .bold, design: .rounded))
                         .foregroundColor(Color(red: 0.18, green: 0.10, blue: 0.10))
-                        .tracking(-3.1)
+                        .tracking(-3.3)
                         .minimumScaleFactor(0.82)
 
                     Text("天")
-                        .font(.system(size: 24, weight: .semibold, design: .rounded))
+                        .font(.system(size: 22, weight: .semibold, design: .rounded))
                         .foregroundColor(theme.unitColor)
-                        .padding(.bottom, 8)
+                        .padding(.bottom, 7)
                 }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.top, 6)
+        .padding(.top, 8)
     }
 
     private var quoteBlock: some View {
-        HStack(alignment: .center, spacing: 0) {
+        HStack(alignment: .center, spacing: 12) {
             VStack(alignment: .leading, spacing: 6) {
                 ForEach(primaryEntries) { entry in
                     EntryView(entry: entry, accentColor: theme.quoteAccent)
@@ -209,22 +209,25 @@ struct CardView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            rerollButton(size: 36, imageSize: 20, isEmbedded: true)
-                .padding(.leading, 12)
-                .padding(.trailing, 2)
+            Capsule()
+                .fill(theme.quoteAccent.opacity(0.22))
+                .frame(width: 1, height: 38)
+
+            rerollButton(size: 34, imageSize: 18, isEmbedded: true)
+                .padding(.trailing, 1)
         }
-        .padding(.horizontal, 15)
-        .padding(.vertical, 12)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 13)
         .frame(maxWidth: .infinity, minHeight: quotePanelHeight, maxHeight: quotePanelHeight, alignment: .center)
         .background(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
                 .fill(theme.quotePanelFill)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    RoundedRectangle(cornerRadius: 22, style: .continuous)
                         .fill(
                             LinearGradient(
                                 colors: [
-                                    Color.white.opacity(0.48),
+                                    Color.white.opacity(0.56),
                                     Color.white.opacity(0.02),
                                 ],
                                 startPoint: .topLeading,
@@ -233,11 +236,11 @@ struct CardView: View {
                         )
                 )
                 .overlay(
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    RoundedRectangle(cornerRadius: 22, style: .continuous)
                         .stroke(theme.quotePanelStroke, lineWidth: 1)
                 )
         )
-        .shadow(color: Color(red: 0.33, green: 0.19, blue: 0.17).opacity(0.08), radius: 14, x: 0, y: 10)
+        .shadow(color: Color(red: 0.33, green: 0.19, blue: 0.17).opacity(0.10), radius: 18, x: 0, y: 12)
         .clipped()
     }
 
@@ -265,7 +268,22 @@ struct CardView: View {
                         )
                     )
             )
-            .shadow(color: theme.cardShadow, radius: 26, x: 0, y: 18)
+            .overlay(
+                RoundedRectangle(cornerRadius: 30, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color.white.opacity(0.16),
+                                Color.clear,
+                                Color(red: 0.46, green: 0.31, blue: 0.26).opacity(0.04),
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+            )
+            .shadow(color: Color.black.opacity(0.04), radius: 12, x: 0, y: 4)
+            .shadow(color: theme.cardShadow, radius: 30, x: 0, y: 20)
     }
 
     private var decorativeFlower: some View {
@@ -321,7 +339,7 @@ private struct EntryView: View {
                         if entry.lines.count > 1 {
                             Text(entry.lines[1])
                                 .font(.system(size: 12, weight: .medium, design: .default))
-                                .foregroundColor(Color(red: 0.46, green: 0.31, blue: 0.29))
+                                .foregroundColor(Color(red: 0.48, green: 0.34, blue: 0.31))
                                 .lineSpacing(1)
                                 .lineLimit(2)
                                 .fixedSize(horizontal: false, vertical: true)
@@ -333,7 +351,7 @@ private struct EntryView: View {
         } else {
             if let first = entry.lines.first {
                 Text(first)
-                    .font(.system(size: 16, weight: .semibold, design: .serif))
+                    .font(.system(size: 15, weight: .semibold, design: .serif))
                     .foregroundColor(Color(red: 0.28, green: 0.17, blue: 0.16))
                     .lineSpacing(1)
                     .lineLimit(3)
@@ -352,11 +370,15 @@ private struct EggChip: View {
             .font(.system(size: 11, weight: .bold, design: .rounded))
             .foregroundColor(Color(red: 0.53, green: 0.38, blue: 0.35))
             .lineLimit(1)
-            .padding(.horizontal, 8)
+            .padding(.horizontal, 9)
             .padding(.vertical, 4)
             .background(
                 Capsule()
-                    .fill(accentColor.opacity(0.12))
+                    .fill(accentColor.opacity(0.10))
+                    .overlay(
+                        Capsule()
+                            .stroke(accentColor.opacity(0.10), lineWidth: 1)
+                    )
             )
     }
 }
