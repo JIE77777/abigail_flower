@@ -40,20 +40,10 @@ struct CardView: View {
             backgroundLayer
             decorativeFlower
 
-            VStack(alignment: .leading, spacing: 8) {
-                countdownBlock
+            VStack(alignment: .leading, spacing: 10) {
+                heroSection
                 Spacer(minLength: 0)
                 quoteBlock
-            }
-            .padding(.horizontal, 24)
-            .padding(.vertical, 22)
-
-            VStack {
-                HStack {
-                    Spacer(minLength: 0)
-                    header
-                }
-                Spacer(minLength: 0)
             }
             .padding(.horizontal, 24)
             .padding(.vertical, 22)
@@ -75,33 +65,45 @@ struct CardView: View {
         }
     }
 
-    private var header: some View {
-        HStack(alignment: .top, spacing: 10) {
-            currentDateBadge
+    private var heroSection: some View {
+        HStack(alignment: .top, spacing: 16) {
+            countdownBlock
+            Spacer(minLength: 0)
+            utilityColumn
+        }
+    }
 
-            Button(action: viewModel.reroll) {
-                ZStack {
-                    Circle()
-                        .fill(theme.buttonFill.opacity(isFlowerHovered ? 1.0 : 0.86))
-                        .frame(width: 46, height: 46)
-                    Circle()
-                        .stroke(theme.buttonStroke, lineWidth: 1)
-                        .frame(width: 46, height: 46)
-                    flowerImage
-                        .resizable()
-                        .interpolation(.none)
-                        .scaledToFit()
-                        .frame(width: 25, height: 25)
-                }
-                .shadow(color: theme.buttonShadow, radius: 10, x: 0, y: 7)
+    private var utilityColumn: some View {
+        VStack(alignment: .trailing, spacing: 12) {
+            currentDateBadge
+            rerollButton
+        }
+        .frame(width: 88, alignment: .trailing)
+        .padding(.top, 2)
+    }
+
+    private var rerollButton: some View {
+        Button(action: viewModel.reroll) {
+            ZStack {
+                Circle()
+                    .fill(theme.buttonFill.opacity(isFlowerHovered ? 1.0 : 0.86))
+                    .frame(width: 40, height: 40)
+                Circle()
+                    .stroke(theme.buttonStroke, lineWidth: 1)
+                    .frame(width: 40, height: 40)
+                flowerImage
+                    .resizable()
+                    .interpolation(.none)
+                    .scaledToFit()
+                    .frame(width: 22, height: 22)
             }
-            .padding(.top, 12)
-            .buttonStyle(.plain)
-            .contentShape(Circle())
-            .help("换一句")
-            .onHover { hovering in
-                isFlowerHovered = hovering
-            }
+            .shadow(color: theme.buttonShadow, radius: 10, x: 0, y: 7)
+        }
+        .buttonStyle(.plain)
+        .contentShape(Circle())
+        .help("换一句")
+        .onHover { hovering in
+            isFlowerHovered = hovering
         }
     }
 
@@ -141,7 +143,7 @@ struct CardView: View {
             .padding(.bottom, 8)
             .background(Color(red: 1.0, green: 0.98, blue: 0.96).opacity(0.70))
         }
-        .frame(width: 92)
+        .frame(width: 88)
         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 20, style: .continuous)
@@ -182,8 +184,8 @@ struct CardView: View {
                 }
             }
         }
-        .frame(maxWidth: 236, alignment: .leading)
-        .padding(.top, 2)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.top, 6)
     }
 
     private var quoteBlock: some View {

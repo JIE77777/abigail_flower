@@ -343,21 +343,25 @@ body::before {
   opacity: 0.06;
 }
 
+.preview-card__hero,
 .preview-card__countdown,
 .quote-panel {
   position: relative;
   z-index: 1;
 }
 
-.preview-card__header {
-  position: absolute;
-  top: 22px;
-  right: 24px;
-  z-index: 2;
-  display: flex;
-  align-items: flex-start;
-  justify-content: flex-end;
-  gap: 10px;
+.preview-card__hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 88px;
+  align-items: start;
+  gap: 16px;
+}
+
+.preview-card__utility {
+  display: grid;
+  justify-items: end;
+  gap: 12px;
+  padding-top: 2px;
 }
 
 .preview-card__title {
@@ -378,8 +382,7 @@ body::before {
 }
 
 .preview-card__badge {
-  justify-self: start;
-  width: 92px;
+  width: 88px;
   border-radius: 20px;
   overflow: hidden;
   display: grid;
@@ -425,8 +428,8 @@ body::before {
 }
 
 .flower-button {
-  width: 46px;
-  height: 46px;
+  width: 40px;
+  height: 40px;
   display: grid;
   place-items: center;
   border-radius: 999px;
@@ -435,7 +438,6 @@ body::before {
   box-shadow: 0 10px 20px rgba(84, 47, 40, 0.10);
   cursor: pointer;
   transition: transform 180ms ease, background 180ms ease, box-shadow 180ms ease;
-  margin-top: 12px;
 }
 
 .flower-button:hover {
@@ -449,8 +451,8 @@ body::before {
 }
 
 .flower-button img {
-  width: 25px;
-  height: 25px;
+  width: 22px;
+  height: 22px;
   image-rendering: pixelated;
 }
 
@@ -458,8 +460,9 @@ body::before {
   margin-top: 0;
   display: grid;
   gap: 5px;
-  max-width: 236px;
-  padding-top: 2px;
+  max-width: none;
+  min-width: 0;
+  padding-top: 6px;
 }
 
 .preview-card__countline {
@@ -649,12 +652,9 @@ body::before {
     height: 322px;
   }
 
-  .preview-card__header {
-    right: 20px;
-  }
-
-  .preview-card__countdown {
-    max-width: 224px;
+  .preview-card__hero {
+    grid-template-columns: minmax(0, 1fr) 84px;
+    gap: 14px;
   }
 
   .preview-card__days {
