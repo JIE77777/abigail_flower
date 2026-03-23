@@ -5,7 +5,6 @@ const previewConfig = {
   taglineCountMin: 1,
   taglineCountMax: 1,
   easterEggDailyChance: 28,
-  showEnglishFirst: true,
   taglineWeights: {
     bright: 3,
     reminders: 2,
@@ -24,6 +23,8 @@ const previewConfig = {
     cookie: 3,
   },
 };
+
+const milestoneDays = new Set([200, 160, 150, 120, 100, 60, 50, 30, 10, 7, 3, 1]);
 
 const taglines = {
   bright: [
@@ -159,8 +160,12 @@ const easterEggs = {
   ],
 };
 
+const cardNode = document.querySelector(".preview-card");
 const titleNode = document.getElementById("card-title");
+const targetBadgeNode = document.getElementById("target-badge");
 const quotePanelNode = document.getElementById("quote-panel");
+const quoteTagNode = document.getElementById("quote-tag");
+const quoteFooterNode = document.getElementById("quote-footer");
 const rerollButton = document.getElementById("reroll-button");
 const countdownBlock = document.getElementById("countdown-block");
 
@@ -186,8 +191,7 @@ function makeTarget(today) {
 }
 
 function daysRemaining(today, target) {
-  const delta = target.getTime() - today.getTime();
-  return Math.round(delta / 86400000);
+  return Math.round((target.getTime() - today.getTime()) / 86400000);
 }
 
 function fnv1a32(input) {
@@ -200,13 +204,13 @@ function fnv1a32(input) {
 }
 
 function mulberry32(seed) {
-  let t = seed >>> 0;
+  let value = seed >>> 0;
   return function next() {
-    t += 0x6d2b79f5;
-    let x = t;
-    x = Math.imul(x ^ (x >>> 15), x | 1);
-    x ^= x + Math.imul(x ^ (x >>> 7), x | 61);
-    return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
+    value += 0x6d2b79f5;
+    let result = value;
+    result = Math.imul(result ^ (result >>> 15), result | 1);
+    result ^= result + Math.imul(result ^ (result >>> 7), result | 61);
+    return ((result ^ (result >>> 14)) >>> 0) / 4294967296;
   };
 }
 
@@ -219,19 +223,19 @@ function randomInt(rng, min, max) {
 }
 
 function pickWeightedCategory(pool, weights, rng) {
-  const entries = Object.keys(pool)
+  const buckets = Object.keys(pool)
     .map((name) => ({ name, weight: weights[name] || 0, items: [...pool[name]] }))
     .filter((entry) => entry.weight > 0 && entry.items.length > 0);
 
-  if (!entries.length) return null;
+  if (!buckets.length) return null;
 
-  const totalWeight = entries.reduce((sum, entry) => sum + entry.weight, 0);
+  const totalWeight = buckets.reduce((sum, entry) => sum + entry.weight, 0);
   let pick = rng() * totalWeight;
-  for (const entry of entries) {
+  for (const entry of buckets) {
     pick -= entry.weight;
     if (pick < 0) return entry.name;
   }
-  return entries[entries.length - 1].name;
+  return buckets[buckets.length - 1].name;
 }
 
 function pickTaglines(seedText) {
@@ -255,10 +259,10 @@ function pickTaglines(seedText) {
     picked.push({ lines: bucket.splice(index, 1)[0], egg: false });
   }
 
-  return { rng, picked };
+  return picked;
 }
 
-function easterCondition(name, today, remainingDays) {
+function easterCondition(name, today, remainingDaysCount) {
   const weekday = today.getDay();
   switch (name) {
     case "always":
@@ -270,11 +274,11 @@ function easterCondition(name, today, remainingDays) {
     case "august":
       return today.getMonth() === 7;
     case "final30":
-      return remainingDays >= 1 && remainingDays <= 30;
+      return remainingDaysCount >= 1 && remainingDaysCount <= 30;
     case "final10":
-      return remainingDays >= 1 && remainingDays <= 10;
+      return remainingDaysCount >= 1 && remainingDaysCount <= 10;
     case "milestones":
-      return [200, 160, 150, 120, 100, 60, 50, 30, 10, 7, 3, 1].includes(remainingDays);
+      return milestoneDays.has(remainingDaysCount);
     case "cookie":
       return true;
     default:
@@ -282,7 +286,7 @@ function easterCondition(name, today, remainingDays) {
   }
 }
 
-function pickEasterEgg(seedText, today, remainingDays) {
+function pickEasterEgg(seedText, today, remainingDaysCount) {
   const rng = makeRng(`${seedText}::easter`);
   if (randomInt(rng, 1, 100) > previewConfig.easterEggDailyChance) {
     return null;
@@ -290,7 +294,7 @@ function pickEasterEgg(seedText, today, remainingDays) {
 
   const filtered = Object.fromEntries(
     Object.entries(easterEggs).filter(([name, entries]) => (
-      easterCondition(name, today, remainingDays) && entries.length > 0
+      easterCondition(name, today, remainingDaysCount) && entries.length > 0
     )),
   );
 
@@ -317,34 +321,15 @@ function saveRerollSeed(today) {
   localStorage.setItem(rerollStorageKey, token);
 }
 
-function renderEntries(entries) {
-  quotePanelNode.innerHTML = "";
-  entries.forEach((entry) => {
-    const wrapper = document.createElement("div");
-    wrapper.className = `quote-entry${entry.lines.length > 1 ? " quote-entry--bilingual" : ""}${entry.egg ? " quote-entry--egg" : ""}`;
-
-    entry.lines.forEach((line, index) => {
-      const p = document.createElement("p");
-      p.className = `quote-entry__line quote-entry__line--${index === 0 ? "lead" : "follow"}`;
-      p.textContent = line;
-      wrapper.appendChild(p);
-    });
-
-    quotePanelNode.appendChild(wrapper);
-  });
+function resolveTone(days) {
+  if (days === 0) return "today";
+  if (days <= 10) return "final";
+  if (milestoneDays.has(days)) return "milestone";
+  return "default";
 }
 
-function renderCard() {
-  const today = currentDayStart();
-  const target = makeTarget(today);
-  const remainingDays = daysRemaining(today, target);
-  const seedBase = `${dayStamp(today)}::${previewConfig.titleLine}`;
-  const rerollSeed = currentRerollSeed(today);
-  const seedText = rerollSeed ? `${seedBase}::${rerollSeed}` : seedBase;
-
-  titleNode.textContent = previewConfig.titleLine;
-
-  if (remainingDays === 0) {
+function renderCountdown(days) {
+  if (days === 0) {
     countdownBlock.innerHTML = `
       <div class="preview-card__countline">
         <span class="preview-card__days">今天</span>
@@ -353,19 +338,65 @@ function renderCard() {
         <span class="preview-card__unit">就是 8.31</span>
       </div>
     `;
-  } else {
-    countdownBlock.innerHTML = `
-      <div class="preview-card__countline">
-        <span class="preview-card__days">${remainingDays}</span>
-        <span class="preview-card__unit">天</span>
-      </div>
-    `;
+    return;
   }
 
-  const { picked } = pickTaglines(seedText);
-  const egg = pickEasterEgg(seedText, today, remainingDays);
-  const entries = egg ? [...picked, egg] : picked;
-  renderEntries(entries);
+  countdownBlock.innerHTML = `
+    <div class="preview-card__countline">
+      <span class="preview-card__days">${days}</span>
+      <span class="preview-card__unit">天</span>
+    </div>
+  `;
+}
+
+function renderPrimaryEntries(entries) {
+  quotePanelNode.innerHTML = "";
+  entries.forEach((entry) => {
+    const wrapper = document.createElement("div");
+    wrapper.className = `quote-entry${entry.lines.length > 1 ? " quote-entry--bilingual" : ""}`;
+
+    entry.lines.forEach((line, index) => {
+      const paragraph = document.createElement("p");
+      paragraph.className = `quote-entry__line quote-entry__line--${index === 0 ? "lead" : "follow"}`;
+      paragraph.textContent = line;
+      wrapper.appendChild(paragraph);
+    });
+
+    quotePanelNode.appendChild(wrapper);
+  });
+}
+
+function renderEggFooter(entry) {
+  quoteFooterNode.innerHTML = "";
+  if (!entry) return;
+
+  const chip = document.createElement("span");
+  chip.className = "quote-chip";
+  chip.textContent = entry.lines[0];
+  quoteFooterNode.appendChild(chip);
+}
+
+function renderCard() {
+  const today = currentDayStart();
+  const target = makeTarget(today);
+  const remainingDaysCount = daysRemaining(today, target);
+  const seedBase = `${dayStamp(today)}::${previewConfig.titleLine}`;
+  const rerollSeed = currentRerollSeed(today);
+  const seedText = rerollSeed ? `${seedBase}::${rerollSeed}` : seedBase;
+
+  const entries = pickTaglines(seedText);
+  const egg = pickEasterEgg(seedText, today, remainingDaysCount);
+  const primaryEntries = entries;
+  const hasBilingual = primaryEntries.some((entry) => entry.lines.length > 1);
+
+  cardNode.dataset.tone = resolveTone(remainingDaysCount);
+  titleNode.textContent = previewConfig.titleLine;
+  targetBadgeNode.textContent = `${String(previewConfig.targetMonth).padStart(2, "0")} · ${String(previewConfig.targetDay).padStart(2, "0")}`;
+  quoteTagNode.hidden = !hasBilingual;
+
+  renderCountdown(remainingDaysCount);
+  renderPrimaryEntries(primaryEntries);
+  renderEggFooter(egg);
 }
 
 rerollButton.addEventListener("click", () => {

@@ -35,7 +35,10 @@
             />
 
             <header class="preview-card__header">
-              <p class="preview-card__title" id="card-title">距离 8.31</p>
+              <div class="preview-card__heading-group">
+                <p class="preview-card__title" id="card-title">距离 8.31</p>
+                <span class="preview-card__badge" id="target-badge">08 · 31</span>
+              </div>
 
               <button class="flower-button" id="reroll-button" type="button" aria-label="今天再换一句" title="今天再换一句">
                 <img src="../App/Resources/Defaults/icons/abigail_flower_level3.png" alt="阿比盖尔之花" />
@@ -49,7 +52,14 @@
               </div>
             </section>
 
-            <section class="quote-panel" id="quote-panel"></section>
+            <section class="quote-panel">
+              <header class="quote-panel__header">
+                <span class="quote-panel__label">今日摘句</span>
+                <span class="quote-panel__tag" id="quote-tag" hidden>WENDY 摘录</span>
+              </header>
+              <div class="quote-panel__body" id="quote-panel"></div>
+              <div class="quote-panel__footer" id="quote-footer"></div>
+            </section>
           </div>
         </section>
       </section>
