@@ -358,15 +358,34 @@ function renderCountdown(days) {
 function renderPrimaryEntries(entries) {
   quotePanelNode.innerHTML = "";
   entries.forEach((entry) => {
+    const isBilingual = entry.lines.length > 1;
     const wrapper = document.createElement("div");
-    wrapper.className = `quote-entry${entry.lines.length > 1 ? " quote-entry--bilingual" : ""}`;
+    wrapper.className = `quote-entry${isBilingual ? " quote-entry--bilingual" : ""}`;
 
-    entry.lines.forEach((line, index) => {
-      const paragraph = document.createElement("p");
-      paragraph.className = `quote-entry__line quote-entry__line--${index === 0 ? "lead" : "follow"}`;
-      paragraph.textContent = line;
-      wrapper.appendChild(paragraph);
-    });
+    if (isBilingual) {
+      const rail = document.createElement("span");
+      rail.className = "quote-entry__rail";
+      wrapper.appendChild(rail);
+
+      const content = document.createElement("div");
+      content.className = "quote-entry__content";
+
+      entry.lines.forEach((line, index) => {
+        const paragraph = document.createElement("p");
+        paragraph.className = `quote-entry__line quote-entry__line--${index === 0 ? "lead" : "follow"}`;
+        paragraph.textContent = line;
+        content.appendChild(paragraph);
+      });
+
+      wrapper.appendChild(content);
+    } else {
+      entry.lines.forEach((line, index) => {
+        const paragraph = document.createElement("p");
+        paragraph.className = `quote-entry__line quote-entry__line--${index === 0 ? "lead" : "follow"}`;
+        paragraph.textContent = line;
+        wrapper.appendChild(paragraph);
+      });
+    }
 
     quotePanelNode.appendChild(wrapper);
   });

@@ -224,19 +224,20 @@ body::before {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 18px;
+  gap: 16px;
 }
 
 .preview-card__heading-group {
   display: grid;
-  gap: 8px;
+  gap: 11px;
 }
 
 .preview-card__title {
   margin: 0;
   font-family: var(--font-serif);
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 700;
+  letter-spacing: 0.01em;
   color: var(--ink-main);
 }
 
@@ -244,30 +245,32 @@ body::before {
   justify-self: start;
   padding: 4px 9px;
   border-radius: 999px;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
   color: var(--badge-text);
   background: var(--badge-fill);
 }
 
 .flower-button {
-  width: 50px;
-  height: 50px;
+  width: 46px;
+  height: 46px;
   display: grid;
   place-items: center;
   border-radius: 999px;
   border: 1px solid var(--accent);
-  background: rgba(255, 255, 255, 0.46);
-  box-shadow: 0 12px 24px rgba(84, 47, 40, 0.12);
+  background: rgba(255, 255, 255, 0.42);
+  box-shadow: 0 10px 20px rgba(84, 47, 40, 0.10);
   cursor: pointer;
   transition: transform 180ms ease, background 180ms ease, box-shadow 180ms ease;
 }
 
 .flower-button:hover {
   transform: translateY(-1px) scale(1.02);
-  background: rgba(255, 255, 255, 0.72);
-  box-shadow: 0 16px 30px rgba(84, 47, 40, 0.16);
+  background: rgba(255, 255, 255, 0.62);
+  box-shadow: 0 14px 24px rgba(84, 47, 40, 0.14);
 }
 
 .flower-button:active {
@@ -275,13 +278,13 @@ body::before {
 }
 
 .flower-button img {
-  width: 27px;
-  height: 27px;
+  width: 25px;
+  height: 25px;
   image-rendering: pixelated;
 }
 
 .preview-card__countdown {
-  margin-top: 16px;
+  margin-top: 12px;
 }
 
 .preview-card__countline {
@@ -306,21 +309,26 @@ body::before {
 
 .quote-panel {
   margin-top: auto;
-  padding: 14px 16px;
+  padding: 15px 16px;
   height: 122px;
   border-radius: 22px;
-  background: var(--panel);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0.46)),
+    var(--panel);
   border: 1px solid var(--panel-line);
   backdrop-filter: blur(16px);
   display: flex;
   flex-direction: column;
   gap: 10px;
   overflow: hidden;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.26);
 }
 
 .quote-panel__body {
   display: grid;
   gap: 10px;
+  min-height: 68px;
+  align-content: start;
 }
 
 .quote-panel__footer {
@@ -336,6 +344,11 @@ body::before {
   gap: 5px;
 }
 
+.quote-entry__content {
+  display: grid;
+  gap: 5px;
+}
+
 .quote-entry__line {
   margin: 0;
   line-height: 1.35;
@@ -343,28 +356,42 @@ body::before {
 
 .quote-entry__line--lead {
   font-family: var(--font-display);
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
   color: var(--ink-main);
 }
 
 .quote-entry__line--follow {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   color: #6a403c;
 }
 
 .quote-entry--bilingual {
-  position: relative;
   grid-template-columns: 3px minmax(0, 1fr);
   gap: 12px;
 }
 
-.quote-entry--bilingual::before {
-  content: "";
+.quote-entry__rail {
   width: 3px;
   border-radius: 999px;
   background: var(--accent);
+}
+
+.quote-entry--bilingual .quote-entry__content {
+  position: relative;
+  padding-left: 10px;
+}
+
+.quote-entry--bilingual .quote-entry__content::before {
+  content: "“";
+  position: absolute;
+  left: 0;
+  top: -8px;
+  font-family: var(--font-serif);
+  font-size: 30px;
+  line-height: 1;
+  color: rgba(174, 133, 128, 0.24);
 }
 
 .quote-entry--bilingual .quote-entry__line--lead {
@@ -381,6 +408,7 @@ body::before {
 .quote-entry--bilingual .quote-entry__line--follow {
   font-size: 13px;
   color: #6d4641;
+  line-height: 1.42;
   line-clamp: 2;
   -webkit-line-clamp: 2;
   display: -webkit-box;

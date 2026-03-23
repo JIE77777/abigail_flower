@@ -35,7 +35,7 @@ struct CardView: View {
             backgroundLayer
             decorativeFlower
 
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 15) {
                 header
                 countdownBlock
                 Spacer(minLength: 0)
@@ -62,14 +62,11 @@ struct CardView: View {
     }
 
     private var header: some View {
-        HStack(alignment: .top, spacing: 14) {
-            VStack(alignment: .leading, spacing: 8) {
-                Text(viewModel.content.title)
-                    .font(.system(size: 18, weight: .semibold, design: .serif))
-                    .foregroundColor(Color(red: 0.34, green: 0.20, blue: 0.19))
-
+        HStack(alignment: .top, spacing: 16) {
+            VStack(alignment: .leading, spacing: 11) {
                 Text(currentDateBadgeText)
                     .font(.system(size: 11, weight: .semibold, design: .rounded))
+                    .monospacedDigit()
                     .foregroundColor(theme.badgeText)
                     .padding(.horizontal, 9)
                     .padding(.vertical, 4)
@@ -77,6 +74,11 @@ struct CardView: View {
                         Capsule()
                             .fill(theme.badgeFill)
                     )
+
+                Text(viewModel.content.title)
+                    .font(.system(size: 20, weight: .semibold, design: .serif))
+                    .foregroundColor(Color(red: 0.34, green: 0.20, blue: 0.19))
+                    .tracking(0.2)
             }
 
             Spacer(minLength: 0)
@@ -85,21 +87,21 @@ struct CardView: View {
                 ZStack {
                     Circle()
                         .fill(theme.buttonFill.opacity(isFlowerHovered ? 1.0 : 0.86))
-                        .frame(width: 50, height: 50)
+                        .frame(width: 46, height: 46)
                     Circle()
                         .stroke(theme.buttonStroke, lineWidth: 1)
-                        .frame(width: 50, height: 50)
+                        .frame(width: 46, height: 46)
                     flowerImage
                         .resizable()
                         .interpolation(.none)
                         .scaledToFit()
-                        .frame(width: 27, height: 27)
+                        .frame(width: 25, height: 25)
                 }
-                .shadow(color: theme.buttonShadow, radius: 12, x: 0, y: 8)
+                .shadow(color: theme.buttonShadow, radius: 10, x: 0, y: 7)
             }
             .buttonStyle(.plain)
             .contentShape(Circle())
-            .help("今天再换一句")
+            .help("换一句")
             .onHover { hovering in
                 isFlowerHovered = hovering
             }
@@ -107,7 +109,7 @@ struct CardView: View {
     }
 
     private var countdownBlock: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 4) {
             if viewModel.content.daysRemaining == 0 {
                 Text("今天")
                     .font(.system(size: 78, weight: .bold, design: .rounded))
@@ -123,6 +125,7 @@ struct CardView: View {
                         .font(.system(size: 96, weight: .bold, design: .rounded))
                         .foregroundColor(Color(red: 0.18, green: 0.10, blue: 0.10))
                         .tracking(-2.8)
+                        .minimumScaleFactor(0.82)
 
                     Text("天")
                         .font(.system(size: 28, weight: .semibold, design: .rounded))
@@ -147,11 +150,21 @@ struct CardView: View {
             }
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 14)
+        .padding(.vertical, 15)
         .frame(maxWidth: .infinity, minHeight: quotePanelHeight, maxHeight: quotePanelHeight, alignment: .topLeading)
         .background(
             RoundedRectangle(cornerRadius: 22, style: .continuous)
                 .fill(theme.quotePanelFill)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 22, style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: [Color.white.opacity(0.18), Color.white.opacity(0.02)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                )
                 .overlay(
                     RoundedRectangle(cornerRadius: 22, style: .continuous)
                         .stroke(theme.quotePanelStroke, lineWidth: 1)
@@ -220,31 +233,39 @@ private struct EntryView: View {
                     .fill(accentColor.opacity(0.72))
                     .frame(width: 3)
 
-                VStack(alignment: .leading, spacing: 5) {
-                    if let first = entry.lines.first {
-                        Text(first)
-                            .font(.system(size: 15, weight: .semibold, design: .serif))
-                            .italic()
-                            .foregroundColor(Color(red: 0.28, green: 0.17, blue: 0.16))
-                            .lineSpacing(2)
-                            .lineLimit(2)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
+                ZStack(alignment: .topLeading) {
+                    Text("“")
+                        .font(.system(size: 34, weight: .semibold, design: .serif))
+                        .foregroundColor(accentColor.opacity(0.22))
+                        .offset(x: -2, y: -8)
 
-                    if entry.lines.count > 1 {
-                        Text(entry.lines[1])
-                            .font(.system(size: 13, weight: .medium, design: .default))
-                            .foregroundColor(Color(red: 0.44, green: 0.28, blue: 0.27))
-                            .lineSpacing(2)
-                            .lineLimit(2)
-                            .fixedSize(horizontal: false, vertical: true)
+                    VStack(alignment: .leading, spacing: 6) {
+                        if let first = entry.lines.first {
+                            Text(first)
+                                .font(.system(size: 15, weight: .semibold, design: .serif))
+                                .italic()
+                                .foregroundColor(Color(red: 0.28, green: 0.17, blue: 0.16))
+                                .lineSpacing(2)
+                                .lineLimit(2)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+
+                        if entry.lines.count > 1 {
+                            Text(entry.lines[1])
+                                .font(.system(size: 13, weight: .medium, design: .default))
+                                .foregroundColor(Color(red: 0.44, green: 0.28, blue: 0.27))
+                                .lineSpacing(2)
+                                .lineLimit(2)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
                     }
+                    .padding(.leading, 12)
                 }
             }
         } else {
             if let first = entry.lines.first {
                 Text(first)
-                    .font(.system(size: 16, weight: .semibold, design: .rounded))
+                    .font(.system(size: 15, weight: .semibold, design: .rounded))
                     .foregroundColor(Color(red: 0.28, green: 0.17, blue: 0.16))
                     .lineSpacing(2)
                     .lineLimit(3)
