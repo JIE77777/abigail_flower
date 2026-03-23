@@ -13,7 +13,7 @@ struct CardConfig {
         "reminders": 2,
         "playful": 2,
         "wendy": 2,
-        "cookie": 8,
+        "cookie": 5,
     ]
     var easterEggsEnabled: Bool = true
     var easterEggDailyChance: Int = 28
@@ -25,7 +25,7 @@ struct CardConfig {
         "final30": 4,
         "final10": 6,
         "milestones": 6,
-        "cookie": 5,
+        "cookie": 3,
     ]
     var panelX: Double = 1120
     var panelY: Double = 84

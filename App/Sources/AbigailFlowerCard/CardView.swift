@@ -5,16 +5,18 @@ struct CardView: View {
     @ObservedObject var viewModel: CardViewModel
     @State private var isFlowerHovered = false
 
+    private let quotePanelHeight: CGFloat = 116
+
     var body: some View {
         ZStack {
             backgroundLayer
             decorativeFlower
 
-            VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: 16) {
                 header
                 countdownBlock
-                quoteBlock
                 Spacer(minLength: 0)
+                quoteBlock
             }
             .padding(.horizontal, 24)
             .padding(.vertical, 22)
@@ -38,37 +40,31 @@ struct CardView: View {
 
     private var header: some View {
         HStack(alignment: .top, spacing: 14) {
-            VStack(alignment: .leading, spacing: 8) {
-                Text(viewModel.content.title)
-                    .font(.system(size: 18, weight: .semibold, design: .serif))
-                    .foregroundColor(Color(red: 0.34, green: 0.20, blue: 0.19))
-
-                Text("点花朵，今天再换一句")
-                    .font(.system(size: 12, weight: .medium, design: .rounded))
-                    .foregroundColor(Color(red: 0.54, green: 0.38, blue: 0.35).opacity(0.88))
-            }
+            Text(viewModel.content.title)
+                .font(.system(size: 18, weight: .semibold, design: .serif))
+                .foregroundColor(Color(red: 0.34, green: 0.20, blue: 0.19))
 
             Spacer(minLength: 0)
 
             Button(action: viewModel.reroll) {
                 ZStack {
                     Circle()
-                        .fill(Color.white.opacity(isFlowerHovered ? 0.76 : 0.52))
-                        .frame(width: 56, height: 56)
+                        .fill(Color.white.opacity(isFlowerHovered ? 0.72 : 0.44))
+                        .frame(width: 52, height: 52)
                     Circle()
-                        .stroke(Color(red: 0.71, green: 0.56, blue: 0.52).opacity(0.52), lineWidth: 1)
-                        .frame(width: 56, height: 56)
+                        .stroke(Color(red: 0.71, green: 0.56, blue: 0.52).opacity(0.42), lineWidth: 1)
+                        .frame(width: 52, height: 52)
                     flowerImage
                         .resizable()
                         .interpolation(.none)
                         .scaledToFit()
-                        .frame(width: 30, height: 30)
+                        .frame(width: 28, height: 28)
                 }
-                .shadow(color: Color(red: 0.45, green: 0.27, blue: 0.23).opacity(0.14), radius: 14, x: 0, y: 8)
+                .shadow(color: Color(red: 0.45, green: 0.27, blue: 0.23).opacity(0.12), radius: 12, x: 0, y: 8)
             }
             .buttonStyle(.plain)
             .contentShape(Circle())
-            .help("点一下，今天再换一句")
+            .help("今天再换一句")
             .onHover { hovering in
                 isFlowerHovered = hovering
             }
@@ -76,7 +72,7 @@ struct CardView: View {
     }
 
     private var countdownBlock: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 8) {
             if viewModel.content.daysRemaining == 0 {
                 Text("今天")
                     .font(.system(size: 78, weight: .bold, design: .rounded))
@@ -97,31 +93,28 @@ struct CardView: View {
                         .font(.system(size: 28, weight: .semibold, design: .rounded))
                         .foregroundColor(Color(red: 0.49, green: 0.31, blue: 0.29))
                 }
-
-                Text("一步一步靠近 8 月 31 日")
-                    .font(.system(size: 13, weight: .medium, design: .rounded))
-                    .foregroundColor(Color(red: 0.54, green: 0.38, blue: 0.35).opacity(0.9))
             }
         }
     }
 
     private var quoteBlock: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 10) {
             ForEach(viewModel.content.entries) { entry in
                 EntryView(entry: entry)
             }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 14)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, minHeight: quotePanelHeight, maxHeight: quotePanelHeight, alignment: .topLeading)
         .background(
             RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .fill(Color.white.opacity(0.56))
+                .fill(Color.white.opacity(0.52))
                 .overlay(
                     RoundedRectangle(cornerRadius: 22, style: .continuous)
-                        .stroke(Color.white.opacity(0.55), lineWidth: 1)
+                        .stroke(Color.white.opacity(0.52), lineWidth: 1)
                 )
         )
+        .clipped()
     }
 
     private var backgroundLayer: some View {
@@ -146,7 +139,7 @@ struct CardView: View {
                     .fill(
                         RadialGradient(
                             colors: [
-                                Color.white.opacity(0.38),
+                                Color.white.opacity(0.34),
                                 Color.white.opacity(0.04),
                             ],
                             center: .topLeading,
@@ -164,7 +157,7 @@ struct CardView: View {
             .interpolation(.none)
             .scaledToFit()
             .frame(width: 124, height: 124)
-            .opacity(0.06)
+            .opacity(0.05)
             .offset(x: 118, y: 98)
     }
 
@@ -179,21 +172,50 @@ struct CardView: View {
 private struct EntryView: View {
     let entry: CardEntry
 
+    private var isBilingualQuote: Bool {
+        entry.lines.count > 1
+    }
+
+    private var isEasterEgg: Bool {
+        entry.lines.first?.hasPrefix("隐藏彩蛋：") == true
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: entry.lines.count > 1 ? 5 : 0) {
+        if isBilingualQuote {
+            HStack(alignment: .top, spacing: 10) {
+                Text("“")
+                    .font(.system(size: 30, weight: .bold, design: .serif))
+                    .foregroundColor(Color(red: 0.68, green: 0.52, blue: 0.49))
+                    .padding(.top, -2)
+
+                VStack(alignment: .leading, spacing: 5) {
+                    if let first = entry.lines.first {
+                        Text(first)
+                            .font(.system(size: 15, weight: .semibold, design: .serif))
+                            .italic()
+                            .foregroundColor(Color(red: 0.28, green: 0.17, blue: 0.16))
+                            .lineSpacing(2)
+                            .lineLimit(2)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    if entry.lines.count > 1 {
+                        Text(entry.lines[1])
+                            .font(.system(size: 13, weight: .medium, design: .default))
+                            .foregroundColor(Color(red: 0.44, green: 0.28, blue: 0.27))
+                            .lineSpacing(2)
+                            .lineLimit(2)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            }
+        } else {
             if let first = entry.lines.first {
                 Text(first)
-                    .font(.system(size: entry.lines.count > 1 ? 15 : 16, weight: .semibold, design: entry.lines.count > 1 ? .serif : .rounded))
-                    .foregroundColor(Color(red: 0.28, green: 0.17, blue: 0.16))
+                    .font(.system(size: isEasterEgg ? 13 : 16, weight: .semibold, design: isEasterEgg ? .default : .rounded))
+                    .foregroundColor(isEasterEgg ? Color(red: 0.54, green: 0.39, blue: 0.36) : Color(red: 0.28, green: 0.17, blue: 0.16))
                     .lineSpacing(2)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            ForEach(Array(entry.lines.dropFirst()), id: \.self) { line in
-                Text(line)
-                    .font(.system(size: 15, weight: .medium, design: .default))
-                    .foregroundColor(Color(red: 0.40, green: 0.24, blue: 0.23))
-                    .lineSpacing(2)
+                    .lineLimit(isEasterEgg ? 2 : 3)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }

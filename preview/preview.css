@@ -139,10 +139,12 @@ body::before {
 .preview-card {
   position: relative;
   width: min(100%, 400px);
-  min-height: 322px;
+  height: 322px;
   padding: 22px 24px;
   border-radius: 30px;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
   background:
     radial-gradient(circle at 0% 0%, rgba(255, 255, 255, 0.36), transparent 42%),
     linear-gradient(140deg, var(--paper-top), var(--paper-mid) 46%, var(--paper-bottom));
@@ -185,37 +187,30 @@ body::before {
 }
 
 .preview-card__title {
-  margin: 0 0 8px;
+  margin: 0;
   font-family: var(--font-serif);
   font-size: 18px;
   font-weight: 700;
   color: var(--ink-main);
 }
 
-.preview-card__hint {
-  margin: 0;
-  font-size: 12px;
-  font-weight: 600;
-  color: rgba(84, 60, 56, 0.88);
-}
-
 .flower-button {
-  width: 56px;
-  height: 56px;
+  width: 52px;
+  height: 52px;
   display: grid;
   place-items: center;
   border-radius: 999px;
-  border: 1px solid rgba(181, 144, 135, 0.52);
-  background: rgba(255, 255, 255, 0.56);
-  box-shadow: 0 12px 28px rgba(84, 47, 40, 0.14);
+  border: 1px solid rgba(181, 144, 135, 0.42);
+  background: rgba(255, 255, 255, 0.46);
+  box-shadow: 0 12px 24px rgba(84, 47, 40, 0.12);
   cursor: pointer;
   transition: transform 180ms ease, background 180ms ease, box-shadow 180ms ease;
 }
 
 .flower-button:hover {
   transform: translateY(-1px) scale(1.02);
-  background: rgba(255, 255, 255, 0.78);
-  box-shadow: 0 16px 30px rgba(84, 47, 40, 0.18);
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 16px 30px rgba(84, 47, 40, 0.16);
 }
 
 .flower-button:active {
@@ -223,8 +218,8 @@ body::before {
 }
 
 .flower-button img {
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
   image-rendering: pixelated;
 }
 
@@ -252,22 +247,18 @@ body::before {
   color: #7d534c;
 }
 
-.preview-card__subline {
-  margin: 8px 0 0;
-  font-size: 13px;
-  font-weight: 600;
-  color: rgba(88, 62, 58, 0.9);
-}
-
 .quote-panel {
-  margin-top: 16px;
+  margin-top: auto;
   padding: 14px 16px;
+  height: 116px;
   border-radius: 22px;
   background: var(--panel);
   border: 1px solid var(--panel-line);
   backdrop-filter: blur(16px);
   display: grid;
   gap: 12px;
+  align-content: start;
+  overflow: hidden;
 }
 
 .quote-entry {
@@ -275,17 +266,59 @@ body::before {
   gap: 5px;
 }
 
+.quote-entry__line {
+  margin: 0;
+  line-height: 1.35;
+}
+
 .quote-entry__line--lead {
-  font-family: var(--font-serif);
-  font-size: 15px;
+  font-family: var(--font-display);
+  font-size: 16px;
   font-weight: 700;
   color: var(--ink-main);
 }
 
 .quote-entry__line--follow {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   color: #6a403c;
+}
+
+.quote-entry--bilingual {
+  position: relative;
+  padding-left: 24px;
+}
+
+.quote-entry--bilingual::before {
+  content: "“";
+  position: absolute;
+  left: 0;
+  top: -8px;
+  font-family: var(--font-serif);
+  font-size: 34px;
+  font-weight: 700;
+  color: rgba(173, 128, 120, 0.88);
+}
+
+.quote-entry--bilingual .quote-entry__line--lead {
+  font-family: var(--font-serif);
+  font-size: 15px;
+  font-style: italic;
+  line-clamp: 2;
+  -webkit-line-clamp: 2;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.quote-entry--bilingual .quote-entry__line--follow {
+  font-size: 13px;
+  color: #6d4641;
+  line-clamp: 2;
+  -webkit-line-clamp: 2;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .quote-entry--egg .quote-entry__line--lead,
@@ -319,7 +352,7 @@ body::before {
 
   .preview-card {
     width: 100%;
-    min-height: auto;
+    height: 322px;
   }
 
   .preview-card__days {

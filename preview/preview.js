@@ -11,7 +11,7 @@ const previewConfig = {
     reminders: 2,
     playful: 2,
     wendy: 2,
-    cookie: 8,
+    cookie: 5,
   },
   easterWeights: {
     always: 1,
@@ -21,7 +21,7 @@ const previewConfig = {
     final30: 4,
     final10: 6,
     milestones: 6,
-    cookie: 5,
+    cookie: 3,
   },
 };
 
@@ -160,8 +160,6 @@ const easterEggs = {
 };
 
 const titleNode = document.getElementById("card-title");
-const daysNode = document.getElementById("days-number");
-const sublineNode = document.getElementById("days-subline");
 const quotePanelNode = document.getElementById("quote-panel");
 const rerollButton = document.getElementById("reroll-button");
 const countdownBlock = document.getElementById("countdown-block");
@@ -323,7 +321,7 @@ function renderEntries(entries) {
   quotePanelNode.innerHTML = "";
   entries.forEach((entry) => {
     const wrapper = document.createElement("div");
-    wrapper.className = `quote-entry${entry.egg ? " quote-entry--egg" : ""}`;
+    wrapper.className = `quote-entry${entry.lines.length > 1 ? " quote-entry--bilingual" : ""}${entry.egg ? " quote-entry--egg" : ""}`;
 
     entry.lines.forEach((line, index) => {
       const p = document.createElement("p");
@@ -351,11 +349,17 @@ function renderCard() {
       <div class="preview-card__countline">
         <span class="preview-card__days">今天</span>
       </div>
-      <p class="preview-card__subline">就是 8.31</p>
+      <div class="preview-card__countline">
+        <span class="preview-card__unit">就是 8.31</span>
+      </div>
     `;
   } else {
-    daysNode.textContent = remainingDays;
-    sublineNode.textContent = "一步一步靠近 8 月 31 日";
+    countdownBlock.innerHTML = `
+      <div class="preview-card__countline">
+        <span class="preview-card__days">${remainingDays}</span>
+        <span class="preview-card__unit">天</span>
+      </div>
+    `;
   }
 
   const { picked } = pickTaglines(seedText);
