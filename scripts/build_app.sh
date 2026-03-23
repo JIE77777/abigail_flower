@@ -68,7 +68,10 @@ cat > "$CONTENTS_DIR/Info.plist" <<PLIST
 </plist>
 PLIST
 
-mapfile -t SWIFT_SOURCES < <(find "$APP_SOURCE_DIR/Sources/AbigailFlowerCard" -name '*.swift' | sort)
+SWIFT_SOURCES=()
+while IFS= read -r source_file; do
+  SWIFT_SOURCES+=("$source_file")
+done < <(find "$APP_SOURCE_DIR/Sources/AbigailFlowerCard" -name '*.swift' | sort)
 if [[ ${#SWIFT_SOURCES[@]} -eq 0 ]]; then
   echo "没有找到 Swift 源码。" >&2
   exit 1
