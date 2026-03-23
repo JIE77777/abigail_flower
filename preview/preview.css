@@ -360,8 +360,8 @@ body::before {
 .preview-card__utility {
   display: grid;
   justify-items: end;
-  gap: 12px;
-  padding-top: 2px;
+  gap: 10px;
+  padding-top: 4px;
 }
 
 .preview-card__title {
@@ -488,21 +488,28 @@ body::before {
 
 .quote-panel {
   margin-top: auto;
-  padding: 12px 15px;
+  padding: 12px 14px 12px 15px;
   height: 90px;
   border-radius: 20px;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(250, 241, 235, 0.72));
   border: 1px solid rgba(190, 163, 152, 0.30);
   backdrop-filter: blur(16px);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 7px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
   overflow: hidden;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.48),
     0 14px 26px rgba(84, 47, 40, 0.08);
+}
+
+.quote-panel__content {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+  align-content: center;
 }
 
 .quote-panel__body {
@@ -521,6 +528,21 @@ body::before {
 
 .quote-panel__footer[hidden] {
   display: none;
+}
+
+.flower-button--embedded {
+  width: 36px;
+  height: 36px;
+  margin-right: 2px;
+  background: rgba(255, 250, 246, 0.74);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.56),
+    0 8px 16px rgba(84, 47, 40, 0.08);
+}
+
+.flower-button--embedded img {
+  width: 20px;
+  height: 20px;
 }
 
 .quote-entry {

@@ -74,30 +74,38 @@ struct CardView: View {
     }
 
     private var utilityColumn: some View {
-        VStack(alignment: .trailing, spacing: 12) {
+        VStack(alignment: .trailing, spacing: 10) {
             currentDateBadge
-            rerollButton
         }
         .frame(width: 88, alignment: .trailing)
-        .padding(.top, 2)
+        .padding(.top, 4)
     }
 
-    private var rerollButton: some View {
+    private func rerollButton(size: CGFloat, imageSize: CGFloat, isEmbedded: Bool = false) -> some View {
         Button(action: viewModel.reroll) {
             ZStack {
                 Circle()
                     .fill(theme.buttonFill.opacity(isFlowerHovered ? 1.0 : 0.86))
-                    .frame(width: 40, height: 40)
+                    .frame(width: size, height: size)
                 Circle()
                     .stroke(theme.buttonStroke, lineWidth: 1)
-                    .frame(width: 40, height: 40)
+                    .frame(width: size, height: size)
                 flowerImage
                     .resizable()
                     .interpolation(.none)
                     .scaledToFit()
-                    .frame(width: 22, height: 22)
+                    .frame(width: imageSize, height: imageSize)
             }
-            .shadow(color: theme.buttonShadow, radius: 10, x: 0, y: 7)
+            .background(
+                Circle()
+                    .fill(isEmbedded ? Color.white.opacity(0.22) : Color.clear)
+            )
+            .shadow(
+                color: theme.buttonShadow.opacity(isEmbedded ? 0.72 : 1.0),
+                radius: isEmbedded ? 8 : 10,
+                x: 0,
+                y: isEmbedded ? 5 : 7
+            )
         }
         .buttonStyle(.plain)
         .contentShape(Circle())
@@ -199,8 +207,11 @@ struct CardView: View {
                     EggChip(text: eggLine, accentColor: theme.quoteAccent)
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
 
-            Spacer(minLength: 0)
+            rerollButton(size: 36, imageSize: 20, isEmbedded: true)
+                .padding(.leading, 12)
+                .padding(.trailing, 2)
         }
         .padding(.horizontal, 15)
         .padding(.vertical, 12)
