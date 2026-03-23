@@ -354,12 +354,14 @@ body::before {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 16px;
+  gap: 14px;
 }
 
 .preview-card__heading-group {
-  display: grid;
-  gap: 10px;
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  min-width: 0;
 }
 
 .preview-card__title {
@@ -369,11 +371,13 @@ body::before {
   font-weight: 700;
   letter-spacing: 0.01em;
   color: var(--ink-main);
+  padding-bottom: 8px;
+  white-space: nowrap;
 }
 
 .preview-card__badge {
   justify-self: start;
-  width: 100px;
+  width: 96px;
   border-radius: 20px;
   overflow: hidden;
   display: grid;
@@ -401,8 +405,8 @@ body::before {
 }
 
 .preview-card__badge-date {
-  padding: 10px 10px 4px;
-  font-size: 23px;
+  padding: 9px 10px 4px;
+  font-size: 22px;
   font-weight: 800;
   letter-spacing: -0.04em;
   line-height: 1;
@@ -448,7 +452,7 @@ body::before {
 }
 
 .preview-card__countdown {
-  margin-top: 12px;
+  margin-top: 8px;
 }
 
 .preview-card__countline {
@@ -458,7 +462,7 @@ body::before {
 }
 
 .preview-card__days {
-  font-size: clamp(82px, 15vw, 96px);
+  font-size: clamp(82px, 15vw, 92px);
   line-height: 0.9;
   letter-spacing: -0.07em;
   font-weight: 800;
@@ -466,15 +470,15 @@ body::before {
 }
 
 .preview-card__unit {
-  font-size: 28px;
+  font-size: 26px;
   font-weight: 700;
   color: var(--badge-text);
 }
 
 .quote-panel {
   margin-top: auto;
-  padding: 15px 16px;
-  height: 122px;
+  padding: 13px 16px;
+  height: 96px;
   border-radius: 22px;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0.46)),
@@ -491,7 +495,7 @@ body::before {
 
 .quote-panel__body {
   display: grid;
-  gap: 8px;
+  gap: 7px;
   min-height: 0;
   align-content: center;
 }
@@ -509,12 +513,12 @@ body::before {
 
 .quote-entry {
   display: grid;
-  gap: 4px;
+  gap: 3px;
 }
 
 .quote-entry__content {
   display: grid;
-  gap: 4px;
+  gap: 3px;
 }
 
 .quote-entry__line {
@@ -634,6 +638,10 @@ body::before {
   .preview-card {
     width: 100%;
     height: 322px;
+  }
+
+  .preview-card__heading-group {
+    gap: 12px;
   }
 
   .preview-card__days {

@@ -5,7 +5,7 @@ struct CardView: View {
     @ObservedObject var viewModel: CardViewModel
     @State private var isFlowerHovered = false
 
-    private let quotePanelHeight: CGFloat = 122
+    private let quotePanelHeight: CGFloat = 96
 
     private var theme: CardTheme {
         CardTheme.resolve(daysRemaining: viewModel.content.daysRemaining)
@@ -40,7 +40,7 @@ struct CardView: View {
             backgroundLayer
             decorativeFlower
 
-            VStack(alignment: .leading, spacing: 15) {
+            VStack(alignment: .leading, spacing: 12) {
                 header
                 countdownBlock
                 Spacer(minLength: 0)
@@ -68,54 +68,14 @@ struct CardView: View {
 
     private var header: some View {
         HStack(alignment: .top, spacing: 16) {
-            VStack(alignment: .leading, spacing: 12) {
-                VStack(spacing: 0) {
-                    Text(currentDateCard.year)
-                        .font(.system(size: 10, weight: .bold, design: .rounded))
-                        .tracking(1.6)
-                        .foregroundColor(Color.white.opacity(0.96))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 5)
-                        .background(
-                            LinearGradient(
-                                colors: [
-                                    Color(red: 0.51, green: 0.38, blue: 0.36).opacity(0.92),
-                                    Color(red: 0.42, green: 0.30, blue: 0.29).opacity(0.94),
-                                ],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        )
-
-                    VStack(spacing: 4) {
-                        Text(currentDateCard.date)
-                            .font(.system(size: 23, weight: .bold, design: .rounded))
-                            .monospacedDigit()
-                            .tracking(-0.9)
-                            .foregroundColor(Color(red: 0.34, green: 0.20, blue: 0.19))
-
-                        Text(currentDateCard.weekday)
-                            .font(.system(size: 12, weight: .semibold, design: .rounded))
-                            .tracking(0.6)
-                            .foregroundColor(theme.badgeText)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.top, 10)
-                    .padding(.bottom, 10)
-                    .background(Color.white.opacity(0.64))
-                }
-                .frame(width: 100)
-                .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .stroke(Color.white.opacity(0.34), lineWidth: 1)
-                )
-                .shadow(color: Color(red: 0.33, green: 0.19, blue: 0.17).opacity(0.08), radius: 12, x: 0, y: 8)
+            HStack(alignment: .bottom, spacing: 14) {
+                currentDateBadge
 
                 Text(viewModel.content.title)
                     .font(.system(size: 20, weight: .semibold, design: .serif))
                     .foregroundColor(Color(red: 0.34, green: 0.20, blue: 0.19))
                     .tracking(0.2)
+                    .padding(.bottom, 8)
             }
 
             Spacer(minLength: 0)
@@ -145,8 +105,53 @@ struct CardView: View {
         }
     }
 
+    private var currentDateBadge: some View {
+        VStack(spacing: 0) {
+            Text(currentDateCard.year)
+                .font(.system(size: 10, weight: .bold, design: .rounded))
+                .tracking(1.6)
+                .foregroundColor(Color.white.opacity(0.96))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 5)
+                .background(
+                    LinearGradient(
+                        colors: [
+                            Color(red: 0.51, green: 0.38, blue: 0.36).opacity(0.92),
+                            Color(red: 0.42, green: 0.30, blue: 0.29).opacity(0.94),
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+
+            VStack(spacing: 4) {
+                Text(currentDateCard.date)
+                    .font(.system(size: 22, weight: .bold, design: .rounded))
+                    .monospacedDigit()
+                    .tracking(-0.9)
+                    .foregroundColor(Color(red: 0.34, green: 0.20, blue: 0.19))
+
+                Text(currentDateCard.weekday)
+                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .tracking(0.6)
+                    .foregroundColor(theme.badgeText)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.top, 9)
+            .padding(.bottom, 9)
+            .background(Color.white.opacity(0.64))
+        }
+        .frame(width: 96)
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .stroke(Color.white.opacity(0.34), lineWidth: 1)
+        )
+        .shadow(color: Color(red: 0.33, green: 0.19, blue: 0.17).opacity(0.08), radius: 12, x: 0, y: 8)
+    }
+
     private var countdownBlock: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 2) {
             if viewModel.content.daysRemaining == 0 {
                 Text("今天")
                     .font(.system(size: 78, weight: .bold, design: .rounded))
@@ -159,13 +164,13 @@ struct CardView: View {
             } else {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     Text("\(viewModel.content.daysRemaining)")
-                        .font(.system(size: 96, weight: .bold, design: .rounded))
+                        .font(.system(size: 92, weight: .bold, design: .rounded))
                         .foregroundColor(Color(red: 0.18, green: 0.10, blue: 0.10))
                         .tracking(-2.8)
                         .minimumScaleFactor(0.82)
 
                     Text("天")
-                        .font(.system(size: 28, weight: .semibold, design: .rounded))
+                        .font(.system(size: 26, weight: .semibold, design: .rounded))
                         .foregroundColor(theme.unitColor)
                 }
             }
@@ -174,7 +179,7 @@ struct CardView: View {
 
     private var quoteBlock: some View {
         HStack(alignment: .center, spacing: 0) {
-            VStack(alignment: .leading, spacing: 9) {
+            VStack(alignment: .leading, spacing: 7) {
                 ForEach(primaryEntries) { entry in
                     EntryView(entry: entry, accentColor: theme.quoteAccent)
                 }
@@ -187,7 +192,7 @@ struct CardView: View {
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 15)
+        .padding(.vertical, 13)
         .frame(maxWidth: .infinity, minHeight: quotePanelHeight, maxHeight: quotePanelHeight, alignment: .center)
         .background(
             RoundedRectangle(cornerRadius: 22, style: .continuous)
