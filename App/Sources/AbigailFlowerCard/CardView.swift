@@ -69,11 +69,11 @@ struct CardView: View {
         HStack(alignment: .top, spacing: 16) {
             countdownBlock
             Spacer(minLength: 0)
-            utilityColumn
+            dateColumn
         }
     }
 
-    private var utilityColumn: some View {
+    private var dateColumn: some View {
         VStack(alignment: .trailing, spacing: 10) {
             currentDateBadge
         }
@@ -81,30 +81,30 @@ struct CardView: View {
         .padding(.top, 4)
     }
 
-    private func rerollButton(size: CGFloat, imageSize: CGFloat, isEmbedded: Bool = false) -> some View {
+    private var embeddedRerollButton: some View {
         Button(action: viewModel.reroll) {
             ZStack {
                 Circle()
                     .fill(theme.buttonFill.opacity(isFlowerHovered ? 1.0 : 0.86))
-                    .frame(width: size, height: size)
+                    .frame(width: 34, height: 34)
                 Circle()
                     .stroke(theme.buttonStroke, lineWidth: 1)
-                    .frame(width: size, height: size)
+                    .frame(width: 34, height: 34)
                 flowerImage
                     .resizable()
                     .interpolation(.none)
                     .scaledToFit()
-                    .frame(width: imageSize, height: imageSize)
+                    .frame(width: 18, height: 18)
             }
             .background(
                 Circle()
-                    .fill(isEmbedded ? Color.white.opacity(0.28) : Color.clear)
+                    .fill(Color.white.opacity(0.28))
             )
             .shadow(
-                color: theme.buttonShadow.opacity(isEmbedded ? 0.72 : 1.0),
-                radius: isEmbedded ? 8 : 10,
+                color: theme.buttonShadow.opacity(0.72),
+                radius: 8,
                 x: 0,
-                y: isEmbedded ? 5 : 7
+                y: 5
             )
         }
         .buttonStyle(.plain)
@@ -213,7 +213,7 @@ struct CardView: View {
                 .fill(theme.quoteAccent.opacity(0.22))
                 .frame(width: 1, height: 38)
 
-            rerollButton(size: 34, imageSize: 18, isEmbedded: true)
+            embeddedRerollButton
                 .padding(.trailing, 1)
         }
         .padding(.horizontal, 16)
@@ -387,7 +387,6 @@ private struct CardTheme {
     let paperTop: Color
     let paperMid: Color
     let paperBottom: Color
-    let badgeFill: Color
     let badgeText: Color
     let buttonFill: Color
     let buttonStroke: Color
@@ -408,7 +407,6 @@ private struct CardTheme {
                 paperTop: Color(red: 0.99, green: 0.96, blue: 0.89),
                 paperMid: Color(red: 0.97, green: 0.92, blue: 0.84),
                 paperBottom: Color(red: 0.94, green: 0.88, blue: 0.79),
-                badgeFill: Color(red: 0.88, green: 0.77, blue: 0.60).opacity(0.28),
                 badgeText: Color(red: 0.50, green: 0.35, blue: 0.22),
                 buttonFill: Color.white.opacity(0.54),
                 buttonStroke: Color(red: 0.79, green: 0.66, blue: 0.47).opacity(0.42),
@@ -428,7 +426,6 @@ private struct CardTheme {
                 paperTop: Color(red: 0.98, green: 0.94, blue: 0.91),
                 paperMid: Color(red: 0.95, green: 0.88, blue: 0.87),
                 paperBottom: Color(red: 0.92, green: 0.82, blue: 0.83),
-                badgeFill: Color(red: 0.84, green: 0.56, blue: 0.58).opacity(0.20),
                 badgeText: Color(red: 0.57, green: 0.31, blue: 0.34),
                 buttonFill: Color.white.opacity(0.52),
                 buttonStroke: Color(red: 0.78, green: 0.48, blue: 0.50).opacity(0.38),
@@ -448,7 +445,6 @@ private struct CardTheme {
                 paperTop: Color(red: 0.99, green: 0.95, blue: 0.88),
                 paperMid: Color(red: 0.96, green: 0.90, blue: 0.83),
                 paperBottom: Color(red: 0.93, green: 0.85, blue: 0.78),
-                badgeFill: Color(red: 0.88, green: 0.73, blue: 0.50).opacity(0.24),
                 badgeText: Color(red: 0.55, green: 0.37, blue: 0.22),
                 buttonFill: Color.white.opacity(0.50),
                 buttonStroke: Color(red: 0.79, green: 0.61, blue: 0.38).opacity(0.38),
@@ -467,7 +463,6 @@ private struct CardTheme {
             paperTop: Color(red: 0.98, green: 0.95, blue: 0.90),
             paperMid: Color(red: 0.95, green: 0.90, blue: 0.86),
             paperBottom: Color(red: 0.91, green: 0.85, blue: 0.83),
-            badgeFill: Color(red: 0.85, green: 0.73, blue: 0.68).opacity(0.20),
             badgeText: Color(red: 0.51, green: 0.35, blue: 0.33),
             buttonFill: Color.white.opacity(0.46),
             buttonStroke: Color(red: 0.71, green: 0.56, blue: 0.52).opacity(0.40),

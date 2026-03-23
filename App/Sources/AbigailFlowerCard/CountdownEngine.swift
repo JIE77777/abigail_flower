@@ -42,7 +42,6 @@ struct CardEntry: Identifiable, Hashable {
 
 struct CardContent {
     let title: String
-    let body: String
     let entries: [CardEntry]
     let daysRemaining: Int
 }
@@ -187,7 +186,6 @@ struct SeededGenerator: RandomNumberGenerator {
 }
 
 struct WeightedCategory {
-    let name: String
     var entries: [CardEntry]
     let weight: Int
 }
@@ -248,7 +246,6 @@ final class CountdownEngine {
         }
 
         let days = calendar.dateComponents([.day], from: today, to: target).day ?? 0
-        let body = days == 0 ? "今天就是 8.31" : "还有 \(days) 天"
         let seedBase = "\(AppStateStore.dayStamp(from: today))::\(config.titleLine)"
         let generatorMode = config.taglineMode.lowercased()
 
@@ -288,7 +285,7 @@ final class CountdownEngine {
             }
         }
 
-        return CardContent(title: config.titleLine, body: body, entries: allEntries, daysRemaining: days)
+        return CardContent(title: config.titleLine, entries: allEntries, daysRemaining: days)
     }
 
     @discardableResult
@@ -363,7 +360,7 @@ final class CountdownEngine {
                 let weight = max(0, weights[name] ?? 1)
                 let entries = loadEntries(from: url, showEnglishFirst: showEnglishFirst)
                 guard !entries.isEmpty else { return nil }
-                return WeightedCategory(name: name, entries: entries, weight: weight)
+                return WeightedCategory(entries: entries, weight: weight)
             }
     }
 

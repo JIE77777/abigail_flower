@@ -8,12 +8,8 @@
   --ink-strong: #2e1a1a;
   --ink-main: #472b29;
   --accent: #ae8580;
-  --accent-soft: rgba(174, 133, 128, 0.16);
-  --badge-fill: rgba(217, 186, 174, 0.20);
   --badge-text: #6b4d49;
   --line-soft: rgba(255, 255, 255, 0.44);
-  --panel: rgba(255, 255, 255, 0.52);
-  --panel-line: rgba(255, 255, 255, 0.52);
   --card-shadow: rgba(58, 34, 30, 0.18);
   --font-display: "Avenir Next", "PingFang SC", "Hiragino Sans GB", "Noto Sans CJK SC", sans-serif;
   --font-serif: "Iowan Old Style", "Palatino Linotype", "Noto Serif SC", serif;
@@ -293,8 +289,6 @@ body::before {
   --paper-mid: rgba(245, 231, 212, 0.97);
   --paper-bottom: rgba(237, 218, 199, 0.96);
   --accent: #be8a57;
-  --accent-soft: rgba(190, 138, 87, 0.18);
-  --badge-fill: rgba(223, 188, 128, 0.24);
   --badge-text: #7a5729;
   --card-shadow: rgba(84, 55, 24, 0.18);
 }
@@ -304,8 +298,6 @@ body::before {
   --paper-mid: rgba(241, 226, 223, 0.97);
   --paper-bottom: rgba(231, 210, 210, 0.96);
   --accent: #bb6e72;
-  --accent-soft: rgba(187, 110, 114, 0.18);
-  --badge-fill: rgba(207, 141, 147, 0.18);
   --badge-text: #7f4248;
   --card-shadow: rgba(93, 40, 49, 0.17);
 }
@@ -315,8 +307,6 @@ body::before {
   --paper-mid: rgba(247, 235, 210, 0.97);
   --paper-bottom: rgba(240, 224, 189, 0.96);
   --accent: #c49652;
-  --accent-soft: rgba(196, 150, 82, 0.20);
-  --badge-fill: rgba(214, 186, 119, 0.24);
   --badge-text: #7e5a22;
   --card-shadow: rgba(100, 73, 33, 0.18);
 }
