@@ -40,11 +40,20 @@ struct CardView: View {
             backgroundLayer
             decorativeFlower
 
-            VStack(alignment: .leading, spacing: 10) {
-                header
+            VStack(alignment: .leading, spacing: 8) {
                 countdownBlock
                 Spacer(minLength: 0)
                 quoteBlock
+            }
+            .padding(.horizontal, 24)
+            .padding(.vertical, 22)
+
+            VStack {
+                HStack {
+                    Spacer(minLength: 0)
+                    header
+                }
+                Spacer(minLength: 0)
             }
             .padding(.horizontal, 24)
             .padding(.vertical, 22)
@@ -67,9 +76,8 @@ struct CardView: View {
     }
 
     private var header: some View {
-        HStack(alignment: .top, spacing: 16) {
+        HStack(alignment: .top, spacing: 10) {
             currentDateBadge
-            Spacer(minLength: 0)
 
             Button(action: viewModel.reroll) {
                 ZStack {
@@ -87,6 +95,7 @@ struct CardView: View {
                 }
                 .shadow(color: theme.buttonShadow, radius: 10, x: 0, y: 7)
             }
+            .padding(.top, 12)
             .buttonStyle(.plain)
             .contentShape(Circle())
             .help("换一句")
@@ -173,6 +182,8 @@ struct CardView: View {
                 }
             }
         }
+        .frame(maxWidth: 236, alignment: .leading)
+        .padding(.top, 2)
     }
 
     private var quoteBlock: some View {
@@ -193,14 +204,14 @@ struct CardView: View {
         .padding(.vertical, 12)
         .frame(maxWidth: .infinity, minHeight: quotePanelHeight, maxHeight: quotePanelHeight, alignment: .center)
         .background(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
                 .fill(theme.quotePanelFill)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
                         .fill(
                             LinearGradient(
                                 colors: [
-                                    Color(red: 1.0, green: 0.99, blue: 0.98).opacity(0.20),
+                                    Color.white.opacity(0.48),
                                     Color.white.opacity(0.02),
                                 ],
                                 startPoint: .topLeading,
@@ -209,10 +220,11 @@ struct CardView: View {
                         )
                 )
                 .overlay(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
                         .stroke(theme.quotePanelStroke, lineWidth: 1)
                 )
         )
+        .shadow(color: Color(red: 0.33, green: 0.19, blue: 0.17).opacity(0.08), radius: 14, x: 0, y: 10)
         .clipped()
     }
 
@@ -368,8 +380,8 @@ private struct CardTheme {
                 buttonShadow: Color(red: 0.57, green: 0.40, blue: 0.24).opacity(0.15),
                 unitColor: Color(red: 0.58, green: 0.39, blue: 0.24),
                 quoteAccent: Color(red: 0.79, green: 0.60, blue: 0.34),
-                quotePanelFill: Color(red: 0.99, green: 0.96, blue: 0.92).opacity(0.56),
-                quotePanelStroke: Color(red: 0.82, green: 0.69, blue: 0.47).opacity(0.18),
+                quotePanelFill: Color(red: 1.0, green: 0.98, blue: 0.94).opacity(0.76),
+                quotePanelStroke: Color(red: 0.82, green: 0.69, blue: 0.47).opacity(0.24),
                 cardStroke: Color.white.opacity(0.44),
                 cardShadow: Color(red: 0.45, green: 0.30, blue: 0.18).opacity(0.17),
                 watermarkOpacity: 0.06
@@ -388,8 +400,8 @@ private struct CardTheme {
                 buttonShadow: Color(red: 0.55, green: 0.30, blue: 0.33).opacity(0.14),
                 unitColor: Color(red: 0.57, green: 0.33, blue: 0.35),
                 quoteAccent: Color(red: 0.77, green: 0.46, blue: 0.49),
-                quotePanelFill: Color(red: 0.98, green: 0.94, blue: 0.92).opacity(0.54),
-                quotePanelStroke: Color(red: 0.76, green: 0.52, blue: 0.53).opacity(0.17),
+                quotePanelFill: Color(red: 0.99, green: 0.96, blue: 0.95).opacity(0.74),
+                quotePanelStroke: Color(red: 0.76, green: 0.52, blue: 0.53).opacity(0.22),
                 cardStroke: Color.white.opacity(0.43),
                 cardShadow: Color(red: 0.44, green: 0.24, blue: 0.27).opacity(0.16),
                 watermarkOpacity: 0.06
@@ -408,8 +420,8 @@ private struct CardTheme {
                 buttonShadow: Color(red: 0.55, green: 0.37, blue: 0.20).opacity(0.14),
                 unitColor: Color(red: 0.58, green: 0.38, blue: 0.26),
                 quoteAccent: Color(red: 0.79, green: 0.57, blue: 0.33),
-                quotePanelFill: Color(red: 0.99, green: 0.96, blue: 0.91).opacity(0.54),
-                quotePanelStroke: Color(red: 0.78, green: 0.59, blue: 0.37).opacity(0.18),
+                quotePanelFill: Color(red: 1.0, green: 0.98, blue: 0.93).opacity(0.75),
+                quotePanelStroke: Color(red: 0.78, green: 0.59, blue: 0.37).opacity(0.24),
                 cardStroke: Color.white.opacity(0.43),
                 cardShadow: Color(red: 0.48, green: 0.33, blue: 0.19).opacity(0.16),
                 watermarkOpacity: 0.06
@@ -427,8 +439,8 @@ private struct CardTheme {
             buttonShadow: Color(red: 0.45, green: 0.27, blue: 0.23).opacity(0.12),
             unitColor: Color(red: 0.49, green: 0.31, blue: 0.29),
             quoteAccent: Color(red: 0.68, green: 0.52, blue: 0.49),
-            quotePanelFill: Color(red: 0.99, green: 0.96, blue: 0.94).opacity(0.53),
-            quotePanelStroke: Color(red: 0.74, green: 0.61, blue: 0.57).opacity(0.16),
+            quotePanelFill: Color(red: 1.0, green: 0.98, blue: 0.96).opacity(0.72),
+            quotePanelStroke: Color(red: 0.74, green: 0.61, blue: 0.57).opacity(0.20),
             cardStroke: Color.white.opacity(0.44),
             cardShadow: Color(red: 0.36, green: 0.22, blue: 0.20).opacity(0.16),
             watermarkOpacity: 0.05
