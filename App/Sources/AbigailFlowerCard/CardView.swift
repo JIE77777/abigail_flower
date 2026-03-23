@@ -11,15 +11,20 @@ struct CardView: View {
         CardTheme.resolve(daysRemaining: viewModel.content.daysRemaining)
     }
 
-    private var currentDateBadgeText: String {
+    private var currentDateCard: (year: String, date: String, weekday: String) {
         let today = Date()
         let calendar = Calendar.current
+        let year = calendar.component(.year, from: today)
         let month = calendar.component(.month, from: today)
         let day = calendar.component(.day, from: today)
         let weekday = calendar.component(.weekday, from: today)
         let weekdays = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"]
         let weekdayText = weekdays[max(0, min(weekdays.count - 1, weekday - 1))]
-        return String(format: "%02d.%02d %@", month, day, weekdayText)
+        return (
+            year: String(year),
+            date: String(format: "%02d.%02d", month, day),
+            weekday: weekdayText
+        )
     }
 
     private var primaryEntries: [CardEntry] {
@@ -64,16 +69,48 @@ struct CardView: View {
     private var header: some View {
         HStack(alignment: .top, spacing: 16) {
             VStack(alignment: .leading, spacing: 12) {
-                Text(currentDateBadgeText)
-                    .font(.system(size: 13, weight: .bold, design: .rounded))
-                    .monospacedDigit()
-                    .foregroundColor(theme.badgeText)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(
-                        Capsule()
-                            .fill(theme.badgeFill)
-                    )
+                VStack(spacing: 0) {
+                    Text(currentDateCard.year)
+                        .font(.system(size: 10, weight: .bold, design: .rounded))
+                        .tracking(1.6)
+                        .foregroundColor(Color.white.opacity(0.96))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 5)
+                        .background(
+                            LinearGradient(
+                                colors: [
+                                    Color(red: 0.51, green: 0.38, blue: 0.36).opacity(0.92),
+                                    Color(red: 0.42, green: 0.30, blue: 0.29).opacity(0.94),
+                                ],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+
+                    VStack(spacing: 4) {
+                        Text(currentDateCard.date)
+                            .font(.system(size: 23, weight: .bold, design: .rounded))
+                            .monospacedDigit()
+                            .tracking(-0.9)
+                            .foregroundColor(Color(red: 0.34, green: 0.20, blue: 0.19))
+
+                        Text(currentDateCard.weekday)
+                            .font(.system(size: 12, weight: .semibold, design: .rounded))
+                            .tracking(0.6)
+                            .foregroundColor(theme.badgeText)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 10)
+                    .padding(.bottom, 10)
+                    .background(Color.white.opacity(0.64))
+                }
+                .frame(width: 100)
+                .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        .stroke(Color.white.opacity(0.34), lineWidth: 1)
+                )
+                .shadow(color: Color(red: 0.33, green: 0.19, blue: 0.17).opacity(0.08), radius: 12, x: 0, y: 8)
 
                 Text(viewModel.content.title)
                     .font(.system(size: 20, weight: .semibold, design: .serif))

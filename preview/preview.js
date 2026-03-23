@@ -60,7 +60,9 @@ const previewState = {
 
 const cardNode = document.querySelector('.preview-card');
 const titleNode = document.getElementById('card-title');
-const currentBadgeNode = document.getElementById('current-badge');
+const currentBadgeYearNode = document.getElementById('current-badge-year');
+const currentBadgeDateNode = document.getElementById('current-badge-date');
+const currentBadgeWeekdayNode = document.getElementById('current-badge-weekday');
 const quotePanelNode = document.getElementById('quote-panel');
 const quoteFooterNode = document.getElementById('quote-footer');
 const rerollButton = document.getElementById('reroll-button');
@@ -117,11 +119,16 @@ function dayStamp(date) {
   return formatInputDate(date);
 }
 
-function formatCurrentBadge(date) {
+function currentDateCardParts(date) {
   const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+  const year = String(date.getFullYear());
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
-  return `${month}.${day} ${weekdays[date.getDay()]}`;
+  return {
+    year,
+    date: `${month}.${day}`,
+    weekday: weekdays[date.getDay()],
+  };
 }
 
 function formatFullDateLabel(date) {
@@ -509,10 +516,13 @@ function renderCard() {
   const entries = pickTaglines(seedText);
   const egg = pickEasterEgg(seedText, today, remainingDaysCount);
   const tone = resolveTone(remainingDaysCount);
+  const badgeParts = currentDateCardParts(today);
 
   cardNode.dataset.tone = tone;
   titleNode.textContent = previewState.config.titleLine;
-  currentBadgeNode.textContent = formatCurrentBadge(today);
+  currentBadgeYearNode.textContent = badgeParts.year;
+  currentBadgeDateNode.textContent = badgeParts.date;
+  currentBadgeWeekdayNode.textContent = badgeParts.weekday;
   simDateInput.value = formatInputDate(today);
   simDateLabelNode.textContent = `模拟日期：${formatFullDateLabel(today)}`;
   simTargetLabelNode.textContent = `目标日期：${formatTargetLabel(target)}`;

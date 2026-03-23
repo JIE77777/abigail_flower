@@ -359,7 +359,7 @@ body::before {
 
 .preview-card__heading-group {
   display: grid;
-  gap: 12px;
+  gap: 10px;
 }
 
 .preview-card__title {
@@ -373,16 +373,49 @@ body::before {
 
 .preview-card__badge {
   justify-self: start;
-  padding: 6px 12px;
-  border-radius: 999px;
-  font-size: 13px;
+  width: 100px;
+  border-radius: 20px;
+  overflow: hidden;
+  display: grid;
+  background: rgba(255, 255, 255, 0.76);
+  border: 1px solid rgba(174, 133, 128, 0.16);
+  box-shadow:
+    0 12px 24px rgba(84, 47, 40, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.42);
+}
+
+.preview-card__badge-year,
+.preview-card__badge-date,
+.preview-card__badge-weekday {
+  display: block;
+  text-align: center;
+}
+
+.preview-card__badge-year {
+  padding: 5px 8px 4px;
+  font-size: 10px;
   font-weight: 800;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.18em;
+  color: rgba(255, 250, 245, 0.96);
+  background: linear-gradient(180deg, rgba(130, 96, 91, 0.92), rgba(107, 77, 73, 0.94));
+}
+
+.preview-card__badge-date {
+  padding: 10px 10px 4px;
+  font-size: 23px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1;
   font-variant-numeric: tabular-nums;
-  line-height: 1.05;
+  color: var(--ink-main);
+}
+
+.preview-card__badge-weekday {
+  padding: 3px 10px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
   color: var(--badge-text);
-  background: var(--badge-fill);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28);
 }
 
 .flower-button {
