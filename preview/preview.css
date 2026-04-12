@@ -464,7 +464,7 @@ body::before {
   align-items: center;
   justify-content: flex-start;
   gap: 6px;
-  min-height: 22px;
+  min-height: 24px;
   padding: 2px 0;
   border-radius: 999px;
   background: transparent;
@@ -474,38 +474,11 @@ body::before {
   align-self: flex-start;
 }
 
-.page-switcher__nav {
-  appearance: none;
-  border: 0;
-  padding: 0;
-  margin: 0;
-  display: grid;
-  place-items: center;
-  width: 15px;
-  height: 15px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.42);
-  border: 1px solid rgba(174, 133, 128, 0.12);
-  color: #573a37;
-  cursor: pointer;
-}
-
-.page-switcher__nav {
-  font-size: 9px;
-  font-weight: 700;
-  line-height: 1;
-  transition: transform 160ms ease, background 160ms ease;
-}
-
-.page-switcher__nav:hover {
-  transform: translateY(-1px);
-  background: rgba(255, 255, 255, 0.78);
-}
-
 .page-switcher__dots {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
+  min-height: 18px;
 }
 
 .page-switcher__dot {
@@ -513,8 +486,8 @@ body::before {
   border: 0;
   padding: 0;
   margin: 0;
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
   border-radius: 999px;
   background: rgba(174, 133, 128, 0.22);
   cursor: pointer;
@@ -527,7 +500,7 @@ body::before {
 }
 
 .page-switcher__dot.is-active {
-  width: 12px;
+  width: 16px;
   background: rgba(174, 133, 128, 0.72);
 }
 
@@ -948,6 +921,159 @@ body::before {
   background: rgba(161, 74, 80, 0.12);
   border-color: rgba(179, 83, 89, 0.28);
   color: #8a3940;
+}
+
+.page-overview {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  align-items: start;
+  justify-items: start;
+  padding: 18px;
+  z-index: 3;
+}
+
+.page-overview[hidden] {
+  display: none;
+}
+
+.page-overview__scrim {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  padding: 0;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 30px;
+  cursor: default;
+}
+
+.page-overview__panel {
+  position: relative;
+  z-index: 1;
+  width: 258px;
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.56);
+  border-radius: 20px;
+  background: linear-gradient(145deg, rgba(255, 250, 245, 0.96), rgba(247, 237, 229, 0.94));
+  box-shadow: 0 24px 38px rgba(84, 47, 40, 0.14);
+}
+
+.page-overview__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.page-overview__eyebrow {
+  margin: 0 0 4px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: #84605b;
+}
+
+.page-overview__head h3 {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 14px;
+  line-height: 1.35;
+  color: #4d2e2b;
+}
+
+.page-overview__close {
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.56);
+  color: #664540;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.page-overview__list {
+  display: grid;
+  gap: 8px;
+  max-height: 188px;
+  overflow: auto;
+}
+
+.page-overview__row {
+  appearance: none;
+  width: 100%;
+  border: 0;
+  padding: 9px 10px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.48);
+  color: inherit;
+  cursor: pointer;
+}
+
+.page-overview__row.is-current {
+  background: rgba(255, 255, 255, 0.66);
+  box-shadow: inset 0 0 0 1px rgba(174, 133, 128, 0.22);
+}
+
+.page-overview__marker {
+  width: 6px;
+  height: 24px;
+  border-radius: 999px;
+  background: rgba(174, 133, 128, 0.18);
+}
+
+.page-overview__row.is-current .page-overview__marker {
+  width: 12px;
+  background: rgba(174, 133, 128, 0.72);
+}
+
+.page-overview__meta {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+  text-align: left;
+}
+
+.page-overview__title {
+  font-family: var(--font-serif);
+  font-size: 13px;
+  font-weight: 600;
+  color: #4a2b28;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.page-overview__subline {
+  font-size: 10px;
+  font-weight: 600;
+  color: #7b5851;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.page-overview__current {
+  font-size: 10px;
+  font-weight: 700;
+  color: #7a4a44;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(174, 133, 128, 0.10);
+}
+
+.page-overview__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 @media (max-width: 900px) {

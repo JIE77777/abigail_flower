@@ -5,6 +5,7 @@ struct CardView: View {
     @ObservedObject var viewModel: CardViewModel
     @State private var isFlowerHovered = false
     @State private var pageDraft: CountdownPageDraft?
+    @State private var isOverviewPresented = false
     @State private var draftDateText = ""
 
     private let quotePanelHeight: CGFloat = 94
@@ -40,8 +41,8 @@ struct CardView: View {
         return viewModel.content.daysRemaining < 0 ? "天前" : "天"
     }
 
-    private var hasPageEditor: Bool {
-        pageDraft != nil
+    private var hasAnyOverlay: Bool {
+        pageDraft != nil || isOverviewPresented
     }
 
     private var currentPageIndex: Int {
@@ -49,14 +50,7 @@ struct CardView: View {
     }
 
     private var visiblePageIndices: [Int] {
-        let pageCount = max(viewModel.pages.count, 1)
-        if pageCount <= 5 {
-            return Array(0..<pageCount)
-        }
-
-        let currentIndex = max(0, currentPageIndex - 1)
-        let start = max(0, min(currentIndex - 1, pageCount - 5))
-        return Array(start..<(start + 5))
+        Array(viewModel.pages.indices)
     }
 
     private var canDeleteDraft: Bool {
@@ -89,12 +83,17 @@ struct CardView: View {
             .padding(.horizontal, 24)
             .padding(.vertical, 22)
 
-            if hasPageEditor {
+            if isOverviewPresented {
+                pageOverviewOverlay
+                    .transition(.opacity.combined(with: .scale(scale: 0.98, anchor: .topLeading)))
+            }
+
+            if pageDraft != nil {
                 pageEditorOverlay
                     .transition(.opacity.combined(with: .scale(scale: 0.98, anchor: .topTrailing)))
             }
         }
-        .animation(.easeInOut(duration: 0.18), value: hasPageEditor)
+        .animation(.easeInOut(duration: 0.18), value: hasAnyOverlay)
         .opacity(viewModel.config.cardOpacity)
         .frame(width: viewModel.panelSize.width, height: viewModel.panelSize.height)
         .background(Color.clear)
@@ -102,16 +101,13 @@ struct CardView: View {
             Button("编辑当前日期") {
                 openCurrentPageEditor()
             }
+            Button("查看所有倒计时") {
+                openOverview()
+            }
             Button("新建日期页") {
                 openNewPageEditor()
             }
             Divider()
-            Button("上一页") {
-                viewModel.selectPreviousPage()
-            }
-            Button("下一页") {
-                viewModel.selectNextPage()
-            }
             if viewModel.canDeleteCurrentPage {
                 Button("删除当前页", role: .destructive) {
                     viewModel.deleteCurrentPage()
@@ -146,38 +142,20 @@ struct CardView: View {
     }
 
     private var pageSwitcher: some View {
-        HStack(spacing: 7) {
-            pageControlButton(
-                systemName: "chevron.left",
-                help: "上一页",
-                enabled: viewModel.pages.count > 1,
-                action: viewModel.selectPreviousPage
-            )
-
-            HStack(spacing: 5) {
-                ForEach(visiblePageIndices, id: \.self) { index in
-                    pageDot(for: index)
-                }
+        HStack(spacing: 6) {
+            ForEach(visiblePageIndices, id: \.self) { index in
+                pageDot(for: index)
             }
-
-            pageControlButton(
-                systemName: "chevron.right",
-                help: "下一页",
-                enabled: viewModel.pages.count > 1,
-                action: viewModel.selectNextPage
-            )
         }
-        .padding(.horizontal, 8)
         .padding(.vertical, 3)
-        .background(
-            Capsule()
-                .fill(Color.white.opacity(0.16))
-                .overlay(
-                    Capsule()
-                        .stroke(theme.quoteAccent.opacity(0.10), lineWidth: 1)
-                )
-        )
-        .fixedSize()
+        .contentShape(Rectangle())
+        .onLongPressGesture(minimumDuration: 0.35, perform: openOverview)
+        .contextMenu {
+            Button("查看所有倒计时") {
+                openOverview()
+            }
+        }
+        .help("点击页迹切换倒计时，长按查看全部倒计时")
     }
 
     private func pageDot(for index: Int) -> some View {
@@ -186,30 +164,12 @@ struct CardView: View {
         return Button(action: { viewModel.selectPage(id: viewModel.pages[index].id) }) {
             Capsule()
                 .fill(isActive ? theme.quoteAccent.opacity(0.72) : theme.quoteAccent.opacity(0.20))
-                .frame(width: isActive ? 12 : 6, height: 6)
+                .frame(width: isActive ? 16 : 8, height: 8)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .help(viewModel.pages[index].title)
         .animation(.easeInOut(duration: 0.16), value: currentPageIndex)
-    }
-
-    private func pageControlButton(systemName: String, help: String, enabled: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            ZStack {
-                Circle()
-                    .fill(Color.white.opacity(enabled ? 0.54 : 0.32))
-                    .frame(width: 16, height: 16)
-                Circle()
-                    .stroke(theme.quoteAccent.opacity(enabled ? 0.14 : 0.08), lineWidth: 1)
-                    .frame(width: 16, height: 16)
-                Image(systemName: systemName)
-                    .font(.system(size: 7.5, weight: .bold, design: .rounded))
-                    .foregroundColor(Color(red: 0.42, green: 0.28, blue: 0.26).opacity(enabled ? 1.0 : 0.45))
-            }
-        }
-        .buttonStyle(.plain)
-        .disabled(!enabled)
-        .help(help)
     }
 
     private var embeddedRerollButton: some View {
@@ -336,6 +296,8 @@ struct CardView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.top, 8)
+        .contentShape(Rectangle())
+        .gesture(pageSwipeGesture)
     }
 
     private var quoteBlock: some View {
@@ -396,6 +358,99 @@ struct CardView: View {
                 .padding(18)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
         }
+    }
+
+    private var pageOverviewOverlay: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 30, style: .continuous)
+                .fill(Color.black.opacity(0.05))
+                .onTapGesture(perform: closeOverview)
+
+            pageOverviewPanel
+                .padding(18)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        }
+    }
+
+    private var pageOverviewPanel: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("所有倒计时")
+                        .font(.system(size: 14, weight: .semibold, design: .serif))
+                        .foregroundColor(Color(red: 0.30, green: 0.18, blue: 0.17))
+                    Text("随时找回、切换和整理你的倒计时")
+                        .font(.system(size: 10, weight: .medium, design: .rounded))
+                        .foregroundColor(Color(red: 0.52, green: 0.37, blue: 0.34))
+                }
+
+                Spacer(minLength: 10)
+
+                Button(action: closeOverview) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundColor(Color(red: 0.45, green: 0.31, blue: 0.29))
+                        .frame(width: 22, height: 22)
+                        .background(
+                            Circle()
+                                .fill(Color.white.opacity(0.56))
+                        )
+                }
+                .buttonStyle(.plain)
+            }
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 8) {
+                    ForEach(viewModel.pages) { page in
+                        Button(action: {
+                            viewModel.selectPage(id: page.id)
+                            closeOverview()
+                        }) {
+                            overviewRow(for: page)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+            .frame(maxHeight: 188)
+
+            HStack(spacing: 8) {
+                Button(action: {
+                    closeOverview()
+                    openNewPageEditor()
+                }) {
+                    Text("新建页")
+                }
+                .buttonStyle(EditorCapsuleButtonStyle(fill: Color.white.opacity(0.56), stroke: Color(red: 0.79, green: 0.67, blue: 0.63).opacity(0.24), text: Color(red: 0.44, green: 0.30, blue: 0.28)))
+
+                Spacer(minLength: 0)
+
+                Button(action: closeOverview) {
+                    Text("关闭")
+                }
+                .buttonStyle(EditorCapsuleButtonStyle(fill: theme.quoteAccent.opacity(0.18), stroke: theme.quoteAccent.opacity(0.24), text: Color(red: 0.37, green: 0.23, blue: 0.21)))
+            }
+        }
+        .padding(14)
+        .frame(width: 258)
+        .background(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color(red: 1.0, green: 0.98, blue: 0.96).opacity(0.96),
+                            Color(red: 0.97, green: 0.93, blue: 0.90).opacity(0.94),
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        .stroke(Color.white.opacity(0.56), lineWidth: 1)
+                )
+        )
+        .shadow(color: Color(red: 0.33, green: 0.19, blue: 0.17).opacity(0.14), radius: 24, x: 0, y: 14)
     }
 
     private var pageEditorPanel: some View {
@@ -662,16 +717,106 @@ struct CardView: View {
         entry.lines.first?.hasPrefix("隐藏彩蛋：") == true
     }
 
+    private var pageSwipeGesture: some Gesture {
+        DragGesture(minimumDistance: 20)
+            .onEnded { value in
+                guard abs(value.translation.width) > abs(value.translation.height) else { return }
+                if value.translation.width <= -36 {
+                    viewModel.selectNextPage()
+                } else if value.translation.width >= 36 {
+                    viewModel.selectPreviousPage()
+                }
+            }
+    }
+
+    private func overviewRow(for page: CountdownPage) -> some View {
+        let isCurrent = page.id == viewModel.currentPage.id
+
+        return HStack(alignment: .center, spacing: 10) {
+            Capsule()
+                .fill(isCurrent ? theme.quoteAccent.opacity(0.72) : theme.quoteAccent.opacity(0.18))
+                .frame(width: isCurrent ? 12 : 6, height: 24)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(page.title)
+                    .font(.system(size: 13, weight: .semibold, design: .serif))
+                    .foregroundColor(Color(red: 0.28, green: 0.17, blue: 0.16))
+                    .lineLimit(1)
+
+                Text("\(formattedDate(page.targetDate)) · \(remainingText(for: page))")
+                    .font(.system(size: 10, weight: .medium, design: .rounded))
+                    .foregroundColor(Color(red: 0.50, green: 0.35, blue: 0.32))
+                    .lineLimit(1)
+            }
+
+            Spacer(minLength: 0)
+
+            if isCurrent {
+                Text("当前")
+                    .font(.system(size: 10, weight: .bold, design: .rounded))
+                    .foregroundColor(Color(red: 0.49, green: 0.31, blue: 0.29))
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(
+                        Capsule()
+                            .fill(theme.quoteAccent.opacity(0.10))
+                    )
+            }
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 9)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(isCurrent ? Color.white.opacity(0.66) : Color.white.opacity(0.48))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(
+                            isCurrent
+                                ? theme.quoteAccent.opacity(0.22)
+                                : Color(red: 0.79, green: 0.67, blue: 0.63).opacity(0.16),
+                            lineWidth: 1
+                        )
+                )
+        )
+    }
+
+    private func formattedDate(_ date: Date) -> String {
+        let components = Calendar(identifier: .gregorian).dateComponents([.year, .month, .day], from: date)
+        return String(format: "%04d.%02d.%02d", components.year ?? 2026, components.month ?? 1, components.day ?? 1)
+    }
+
+    private func remainingText(for page: CountdownPage) -> String {
+        let calendar = Calendar(identifier: .gregorian)
+        let today = calendar.startOfDay(for: Date())
+        let target = calendar.startOfDay(for: page.targetDate)
+        let value = calendar.dateComponents([.day], from: today, to: target).day ?? 0
+        if value == 0 { return "今天" }
+        if value < 0 { return "\(abs(value)) 天前" }
+        return "\(value) 天"
+    }
+
     private func openCurrentPageEditor() {
+        closeOverview()
         let draft = viewModel.beginEditingCurrentPage()
         pageDraft = draft
         syncDraftDateText(from: draft.targetDate)
     }
 
     private func openNewPageEditor() {
+        closeOverview()
         let draft = viewModel.beginCreatingPage()
         pageDraft = draft
         syncDraftDateText(from: draft.targetDate)
+    }
+
+    private func openOverview() {
+        pageDraft = nil
+        draftDateText = ""
+        isOverviewPresented = true
+    }
+
+    private func closeOverview() {
+        isOverviewPresented = false
     }
 
     private func closePageEditor() {

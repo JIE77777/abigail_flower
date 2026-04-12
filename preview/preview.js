@@ -61,6 +61,7 @@ const previewState = {
   pages: [],
   selectedPageID: null,
   editor: null,
+  overviewOpen: false,
 };
 
 const cardNode = document.querySelector('.preview-card');
@@ -100,6 +101,12 @@ const pageNewButton = document.getElementById('page-new-button');
 const pageDeleteButton = document.getElementById('page-delete-button');
 const pageCancelButton = document.getElementById('page-cancel-button');
 const pageSaveButton = pageEditorForm.querySelector('[type="submit"]');
+const pageOverviewNode = document.getElementById('page-overview');
+const pageOverviewScrim = document.getElementById('page-overview-scrim');
+const pageOverviewClose = document.getElementById('page-overview-close');
+const pageOverviewList = document.getElementById('page-overview-list');
+const pageOverviewNewButton = document.getElementById('page-overview-new-button');
+const pageOverviewDoneButton = document.getElementById('page-overview-done-button');
 
 function cloneDataMap(map) {
   return Object.fromEntries(
@@ -542,24 +549,8 @@ function renderEggFooter(entry) {
 function renderPageSwitcher() {
   const activePage = currentPage();
   const activeIndex = Math.max(0, previewState.pages.findIndex((page) => page.id === activePage.id));
-  const pageCount = Math.max(previewState.pages.length, 1);
-  const start = pageCount <= 5 ? 0 : Math.max(0, Math.min(activeIndex - 1, pageCount - 5));
-  const visibleIndices = Array.from({ length: Math.min(pageCount, 5) }, (_, offset) => start + offset);
+  const visibleIndices = previewState.pages.map((_, index) => index);
   pageSwitcherNode.innerHTML = '';
-
-  const prevButton = document.createElement('button');
-  prevButton.className = 'page-switcher__nav';
-  prevButton.type = 'button';
-  prevButton.title = '上一页';
-  prevButton.textContent = '‹';
-  prevButton.disabled = pageCount <= 1;
-  prevButton.addEventListener('click', () => {
-    const nextIndex = (activeIndex - 1 + previewState.pages.length) % previewState.pages.length;
-    previewState.selectedPageID = previewState.pages[nextIndex].id;
-    savePages();
-    renderCard();
-  });
-  pageSwitcherNode.appendChild(prevButton);
 
   const dotsNode = document.createElement('div');
   dotsNode.className = 'page-switcher__dots';
@@ -576,20 +567,73 @@ function renderPageSwitcher() {
     dotsNode.appendChild(dot);
   });
   pageSwitcherNode.appendChild(dotsNode);
+}
 
-  const nextButton = document.createElement('button');
-  nextButton.className = 'page-switcher__nav';
-  nextButton.type = 'button';
-  nextButton.title = '下一页';
-  nextButton.textContent = '›';
-  nextButton.disabled = pageCount <= 1;
-  nextButton.addEventListener('click', () => {
-    const nextIndex = (activeIndex + 1) % previewState.pages.length;
-    previewState.selectedPageID = previewState.pages[nextIndex].id;
-    savePages();
-    renderCard();
+function remainingLabelForPage(page) {
+  const today = loadSimulatedDate();
+  const target = parseDateInput(page.targetDate) || makeDefaultTarget(today);
+  const remaining = daysRemaining(today, target);
+  if (remaining === 0) return '今天';
+  if (remaining < 0) return `${Math.abs(remaining)} 天前`;
+  return `${remaining} 天`;
+}
+
+function renderOverview() {
+  pageOverviewList.innerHTML = '';
+  const activePage = currentPage();
+
+  previewState.pages.forEach((page) => {
+    const row = document.createElement('button');
+    row.className = `page-overview__row${page.id === activePage.id ? ' is-current' : ''}`;
+    row.type = 'button';
+    row.addEventListener('click', () => {
+      previewState.selectedPageID = page.id;
+      savePages();
+      closeOverview();
+      renderCard();
+    });
+
+    const marker = document.createElement('span');
+    marker.className = 'page-overview__marker';
+    row.appendChild(marker);
+
+    const meta = document.createElement('div');
+    meta.className = 'page-overview__meta';
+
+    const title = document.createElement('span');
+    title.className = 'page-overview__title';
+    title.textContent = page.title;
+    meta.appendChild(title);
+
+    const subline = document.createElement('span');
+    subline.className = 'page-overview__subline';
+    subline.textContent = `${formatTargetLabel(parseDateInput(page.targetDate) || currentDayStart())} · ${remainingLabelForPage(page)}`;
+    meta.appendChild(subline);
+
+    row.appendChild(meta);
+
+    if (page.id === activePage.id) {
+      const current = document.createElement('span');
+      current.className = 'page-overview__current';
+      current.textContent = '当前';
+      row.appendChild(current);
+    }
+
+    pageOverviewList.appendChild(row);
   });
-  pageSwitcherNode.appendChild(nextButton);
+}
+
+function openOverview() {
+  previewState.overviewOpen = true;
+  previewState.editor = null;
+  pageEditorNode.hidden = true;
+  pageOverviewNode.hidden = false;
+  renderOverview();
+}
+
+function closeOverview() {
+  previewState.overviewOpen = false;
+  pageOverviewNode.hidden = true;
 }
 
 function parseEnvText(text) {
@@ -747,6 +791,9 @@ function renderCard() {
   renderPrimaryEntries(entries);
   renderEggFooter(egg);
   renderPageSwitcher();
+  if (previewState.overviewOpen) {
+    renderOverview();
+  }
 }
 
 function jumpToPreset(kind) {
@@ -773,6 +820,7 @@ function jumpToPreset(kind) {
 }
 
 function openEditor(isNew) {
+  closeOverview();
   const page = currentPage();
   const baseDate = parseDateInput(page.targetDate) || currentDayStart();
   previewState.editor = isNew
@@ -850,6 +898,11 @@ function deleteCurrentPage() {
 }
 
 function bindInteractions() {
+  let overviewHoldTimer = null;
+  let holdTriggered = false;
+  let swipeStartX = 0;
+  let swipeStartY = 0;
+
   rerollButton.addEventListener('click', () => {
     const today = loadSimulatedDate();
     saveRerollSeed(today);
@@ -862,6 +915,61 @@ function bindInteractions() {
 
   cardTitleNode.addEventListener('dblclick', () => {
     openEditor(false);
+  });
+
+  pageSwitcherNode.addEventListener('contextmenu', (event) => {
+    event.preventDefault();
+    openOverview();
+  });
+
+  pageSwitcherNode.addEventListener('pointerdown', () => {
+    holdTriggered = false;
+    clearTimeout(overviewHoldTimer);
+    overviewHoldTimer = window.setTimeout(() => {
+      holdTriggered = true;
+      openOverview();
+    }, 360);
+  });
+
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach((eventName) => {
+    pageSwitcherNode.addEventListener(eventName, () => {
+      clearTimeout(overviewHoldTimer);
+      if (eventName !== 'pointerup') {
+        holdTriggered = false;
+      }
+    });
+  });
+
+  pageSwitcherNode.addEventListener('click', (event) => {
+    if (!holdTriggered) return;
+    holdTriggered = false;
+    event.preventDefault();
+    event.stopPropagation();
+  }, true);
+
+  countdownBlock.addEventListener('pointerdown', (event) => {
+    if (previewState.editor || previewState.overviewOpen) return;
+    swipeStartX = event.clientX;
+    swipeStartY = event.clientY;
+  });
+
+  countdownBlock.addEventListener('pointerup', (event) => {
+    if (previewState.editor || previewState.overviewOpen) return;
+    const deltaX = event.clientX - swipeStartX;
+    const deltaY = event.clientY - swipeStartY;
+    if (Math.abs(deltaX) <= 36 || Math.abs(deltaX) <= Math.abs(deltaY)) return;
+
+    if (deltaX < 0) {
+      const currentIndex = previewState.pages.findIndex((page) => page.id === previewState.selectedPageID);
+      const nextIndex = (currentIndex + 1) % previewState.pages.length;
+      previewState.selectedPageID = previewState.pages[nextIndex].id;
+    } else {
+      const currentIndex = previewState.pages.findIndex((page) => page.id === previewState.selectedPageID);
+      const prevIndex = (currentIndex - 1 + previewState.pages.length) % previewState.pages.length;
+      previewState.selectedPageID = previewState.pages[prevIndex].id;
+    }
+    savePages();
+    renderCard();
   });
 
   jumpTodayButton.addEventListener('click', () => {
@@ -917,9 +1025,19 @@ function bindInteractions() {
     saveEditor();
   });
 
+  pageOverviewScrim.addEventListener('click', closeOverview);
+  pageOverviewClose.addEventListener('click', closeOverview);
+  pageOverviewDoneButton.addEventListener('click', closeOverview);
+  pageOverviewNewButton.addEventListener('click', () => {
+    closeOverview();
+    openEditor(true);
+  });
+
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && !pageEditorNode.hidden) {
       closeEditor();
+    } else if (event.key === 'Escape' && !pageOverviewNode.hidden) {
+      closeOverview();
     }
   });
 }
@@ -936,7 +1054,7 @@ async function init() {
     if (!localStorage.getItem(pagesStorageKey)) {
       initializePages();
     }
-    sourceStatusNode.textContent = '已读取仓库中的真实文案库和权重。双击标题或日期牌可编辑当前倒计时，标题上方的轻量页迹可切换多个倒计时。';
+    sourceStatusNode.textContent = '已读取仓库中的真实文案库和权重。点页迹可切页，左右轻划可翻页，长按或右键页迹可打开倒计时总览。';
   } catch (error) {
     console.error(error);
     sourceStatusNode.textContent = '未能读取仓库源文件。请在仓库根目录运行 python3 -m http.server 8000 后再打开预览。';
