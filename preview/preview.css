@@ -83,6 +83,7 @@ body::before {
 }
 
 .stage {
+  position: relative;
   width: min(1120px, 100%);
   display: grid;
   grid-template-columns: minmax(320px, 430px) 400px;
@@ -276,6 +277,33 @@ body::before {
 .preview-card-shell.is-dragging {
   transition: none;
   z-index: 3;
+}
+
+.detached-card-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.preview-card-shell--detached {
+  position: absolute;
+  top: 0;
+  left: 0;
+  justify-self: auto;
+  pointer-events: auto;
+}
+
+.preview-card-shell--detached .preview-card {
+  cursor: grab;
+}
+
+.preview-card-shell--detached.is-dragging {
+  z-index: 6;
+}
+
+.preview-card--detached .page-switcher {
+  min-height: 18px;
 }
 
 .preview-card {

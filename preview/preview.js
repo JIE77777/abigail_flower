@@ -45,6 +45,7 @@ const simulatedDateStorageKey = 'abigail-flower-preview-simulated-date';
 const pagesStorageKey = 'abigail-flower-preview-pages';
 const selectedPageStorageKey = 'abigail-flower-preview-selected-page';
 const cardOffsetStorageKey = 'abigail-flower-preview-card-offset';
+const detachedCardsStorageKey = 'abigail-flower-preview-detached-cards';
 
 const sourceManifest = {
   taglines: ['bright', 'cookie', 'playful', 'reminders', 'wendy'],
@@ -61,13 +62,16 @@ const previewState = {
   easterEggs: deepClone(fallbackData.easterEggs),
   pages: [],
   selectedPageID: null,
+  detachedCards: [],
   editor: null,
   overviewOpen: false,
   cardOffset: { x: 0, y: 0 },
 };
 
+const stageNode = document.querySelector('.stage');
 const cardShellNode = document.querySelector('.preview-card-shell');
 const cardNode = document.querySelector('.preview-card');
+const detachedCardLayerNode = document.getElementById('detached-card-layer');
 const currentBadgeButton = document.getElementById('current-badge-button');
 const currentBadgeYearNode = document.getElementById('current-badge-year');
 const currentBadgeDateNode = document.getElementById('current-badge-date');
@@ -324,11 +328,43 @@ function createDefaultPage(referenceDate = currentDayStart()) {
   }, referenceDate);
 }
 
+function normalizeDetachedCard(detached) {
+  if (!detached || typeof detached !== 'object') return null;
+  const page = normalizePage(detached.page || detached);
+  const offset = detached.offset && Number.isFinite(detached.offset.x) && Number.isFinite(detached.offset.y)
+    ? { x: detached.offset.x, y: detached.offset.y }
+    : { x: 0, y: 0 };
+
+  return {
+    id: typeof detached.id === 'string' && detached.id ? detached.id : page.id,
+    page,
+    offset,
+  };
+}
+
 function savePages() {
   localStorage.setItem(pagesStorageKey, JSON.stringify(previewState.pages));
   if (previewState.selectedPageID) {
     localStorage.setItem(selectedPageStorageKey, previewState.selectedPageID);
   }
+}
+
+function loadDetachedCards() {
+  try {
+    const raw = localStorage.getItem(detachedCardsStorageKey);
+    const parsed = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .map((detached) => normalizeDetachedCard(detached))
+      .filter(Boolean);
+  } catch (error) {
+    console.warn('Failed to load detached preview cards', error);
+    return [];
+  }
+}
+
+function saveDetachedCards() {
+  localStorage.setItem(detachedCardsStorageKey, JSON.stringify(previewState.detachedCards));
 }
 
 function initializePages() {
@@ -492,6 +528,24 @@ function pickEasterEgg(seedText, today, remainingDaysCount) {
   return { lines: bucket[randomInt(rng, 0, bucket.length - 1)], egg: true };
 }
 
+function buildSnapshotForPage(page, today = loadSimulatedDate()) {
+  const target = parseDateInput(page.targetDate) || makeDefaultTarget(today);
+  const remainingDaysCount = daysRemaining(today, target);
+  const seedBase = `${dayStamp(today)}::${page.id}`;
+  const rerollSeed = currentRerollSeed(today);
+  const seedText = rerollSeed ? `${seedBase}::${rerollSeed}` : seedBase;
+
+  return {
+    page,
+    target,
+    remainingDaysCount,
+    tone: resolveTone(remainingDaysCount),
+    badgeParts: currentDateCardParts(today),
+    entries: pickTaglines(seedText),
+    egg: pickEasterEgg(seedText, today, remainingDaysCount),
+  };
+}
+
 function currentRerollSeed(today) {
   const stamp = dayStamp(today);
   if (localStorage.getItem(rerollDateKey) !== stamp) {
@@ -516,13 +570,13 @@ function resolveTone(days) {
   return 'default';
 }
 
-function renderCountdown(days, titleLine) {
-  cardTitleNode.textContent = titleLine;
+function renderCountdown(days, titleLine, titleNode = cardTitleNode, displayNode = countDisplayNode) {
+  titleNode.textContent = titleLine;
   const absolute = Math.abs(days);
   const unit = days < 0 ? '天前' : '天';
 
   if (days === 0) {
-    countDisplayNode.innerHTML = `
+    displayNode.innerHTML = `
       <div class="preview-card__countline">
         <span class="preview-card__days">今天</span>
       </div>
@@ -533,7 +587,7 @@ function renderCountdown(days, titleLine) {
     return;
   }
 
-  countDisplayNode.innerHTML = `
+  displayNode.innerHTML = `
     <div class="preview-card__countline">
       <span class="preview-card__days">${absolute}</span>
       <span class="preview-card__unit">${unit}</span>
@@ -541,51 +595,105 @@ function renderCountdown(days, titleLine) {
   `;
 }
 
-function renderPrimaryEntries(entries) {
-  quotePanelNode.innerHTML = '';
+function createEntryNode(entry) {
+  const isBilingual = entry.lines.length > 1;
+  const wrapper = document.createElement('div');
+  wrapper.className = `quote-entry${isBilingual ? ' quote-entry--bilingual' : ''}`;
+
+  if (isBilingual) {
+    const rail = document.createElement('span');
+    rail.className = 'quote-entry__rail';
+    wrapper.appendChild(rail);
+
+    const content = document.createElement('div');
+    content.className = 'quote-entry__content';
+
+    entry.lines.forEach((line, index) => {
+      const paragraph = document.createElement('p');
+      paragraph.className = `quote-entry__line quote-entry__line--${index === 0 ? 'lead' : 'follow'}`;
+      paragraph.textContent = line;
+      content.appendChild(paragraph);
+    });
+
+    wrapper.appendChild(content);
+  } else {
+    entry.lines.forEach((line, index) => {
+      const paragraph = document.createElement('p');
+      paragraph.className = `quote-entry__line quote-entry__line--${index === 0 ? 'lead' : 'follow'}`;
+      paragraph.textContent = line;
+      wrapper.appendChild(paragraph);
+    });
+  }
+
+  return wrapper;
+}
+
+function renderPrimaryEntries(entries, container = quotePanelNode) {
+  container.innerHTML = '';
   entries.forEach((entry) => {
-    const isBilingual = entry.lines.length > 1;
-    const wrapper = document.createElement('div');
-    wrapper.className = `quote-entry${isBilingual ? ' quote-entry--bilingual' : ''}`;
-
-    if (isBilingual) {
-      const rail = document.createElement('span');
-      rail.className = 'quote-entry__rail';
-      wrapper.appendChild(rail);
-
-      const content = document.createElement('div');
-      content.className = 'quote-entry__content';
-
-      entry.lines.forEach((line, index) => {
-        const paragraph = document.createElement('p');
-        paragraph.className = `quote-entry__line quote-entry__line--${index === 0 ? 'lead' : 'follow'}`;
-        paragraph.textContent = line;
-        content.appendChild(paragraph);
-      });
-
-      wrapper.appendChild(content);
-    } else {
-      entry.lines.forEach((line, index) => {
-        const paragraph = document.createElement('p');
-        paragraph.className = `quote-entry__line quote-entry__line--${index === 0 ? 'lead' : 'follow'}`;
-        paragraph.textContent = line;
-        wrapper.appendChild(paragraph);
-      });
-    }
-
-    quotePanelNode.appendChild(wrapper);
+    container.appendChild(createEntryNode(entry));
   });
 }
 
-function renderEggFooter(entry) {
-  quoteFooterNode.innerHTML = '';
-  quoteFooterNode.hidden = !entry;
+function renderEggFooter(entry, container = quoteFooterNode) {
+  container.innerHTML = '';
+  container.hidden = !entry;
   if (!entry) return;
 
   const chip = document.createElement('span');
   chip.className = 'quote-chip';
   chip.textContent = entry.lines[0];
-  quoteFooterNode.appendChild(chip);
+  container.appendChild(chip);
+}
+
+function stageRelativeOffset(clientX, clientY) {
+  if (!stageNode) return { x: 0, y: 0 };
+  const rect = stageNode.getBoundingClientRect();
+  const shellRect = cardShellNode?.getBoundingClientRect();
+  const width = shellRect?.width ?? 400;
+  const height = shellRect?.height ?? 322;
+  const margin = 18;
+
+  return {
+    x: clamp(clientX - rect.left - (width * 0.35), margin, Math.max(margin, rect.width - width - margin)),
+    y: clamp(clientY - rect.top - (height * 0.18), margin, Math.max(margin, rect.height - height - margin)),
+  };
+}
+
+function focusDetachedCard(detachedID) {
+  const index = previewState.detachedCards.findIndex((detached) => detached.id === detachedID);
+  if (index === -1 || !stageNode) return;
+  const rect = stageNode.getBoundingClientRect();
+  const shellRect = cardShellNode?.getBoundingClientRect();
+  const width = shellRect?.width ?? 400;
+  const height = shellRect?.height ?? 322;
+  const margin = 18;
+  const nextOffset = {
+    x: clamp(rect.width - width - 24, margin, Math.max(margin, rect.width - width - margin)),
+    y: clamp(20 + (index * 26), margin, Math.max(margin, rect.height - height - margin)),
+  };
+  previewState.detachedCards[index].offset = nextOffset;
+  saveDetachedCards();
+  renderDetachedCards();
+}
+
+function detachPageToCard(pageID, clientX, clientY) {
+  const index = previewState.pages.findIndex((page) => page.id === pageID);
+  if (index === -1 || previewState.pages.length <= 1) return false;
+
+  const [page] = previewState.pages.splice(index, 1);
+  const fallbackIndex = Math.min(index, previewState.pages.length - 1);
+  previewState.selectedPageID = previewState.pages[fallbackIndex]?.id ?? null;
+  previewState.detachedCards.push({
+    id: page.id,
+    page,
+    offset: stageRelativeOffset(clientX, clientY),
+  });
+
+  savePages();
+  saveDetachedCards();
+  renderCard();
+  return true;
 }
 
 function renderPageSwitcher() {
@@ -601,11 +709,46 @@ function renderPageSwitcher() {
     dot.className = `page-switcher__dot${index === activeIndex ? ' is-active' : ''}`;
     dot.type = 'button';
     dot.title = previewState.pages[index].title;
+    let dotDrag = null;
     dot.addEventListener('click', () => {
+      if (dotDrag?.detached) {
+        dotDrag = null;
+        return;
+      }
       previewState.selectedPageID = previewState.pages[index].id;
       savePages();
       renderCard();
     });
+
+    dot.addEventListener('pointerdown', (event) => {
+      if (event.button !== 0 || previewState.pages.length <= 1) return;
+      event.stopPropagation();
+      dotDrag = {
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+        detached: false,
+      };
+    });
+
+    dot.addEventListener('pointermove', (event) => {
+      if (!dotDrag || event.pointerId !== dotDrag.pointerId || dotDrag.detached) return;
+      event.stopPropagation();
+      const deltaX = event.clientX - dotDrag.startX;
+      const deltaY = event.clientY - dotDrag.startY;
+      if (Math.hypot(deltaX, deltaY) < 18) return;
+      dotDrag.detached = detachPageToCard(previewState.pages[index].id, event.clientX, event.clientY);
+    });
+
+    const resetDotDrag = (event) => {
+      if (!dotDrag) return;
+      if (event && event.pointerId !== dotDrag.pointerId) return;
+      if (event) event.stopPropagation();
+      dotDrag = null;
+    };
+
+    dot.addEventListener('pointerup', resetDotDrag);
+    dot.addEventListener('pointercancel', resetDotDrag);
     dotsNode.appendChild(dot);
   });
   pageSwitcherNode.appendChild(dotsNode);
@@ -663,6 +806,49 @@ function renderOverview() {
 
     pageOverviewList.appendChild(row);
   });
+
+  if (previewState.detachedCards.length) {
+    const sectionLabel = document.createElement('p');
+    sectionLabel.className = 'page-overview__eyebrow';
+    sectionLabel.textContent = '已拖出的卡片';
+    pageOverviewList.appendChild(sectionLabel);
+
+    previewState.detachedCards.forEach((detached) => {
+      const row = document.createElement('button');
+      row.className = 'page-overview__row';
+      row.type = 'button';
+      row.addEventListener('click', () => {
+        focusDetachedCard(detached.id);
+        closeOverview();
+      });
+
+      const marker = document.createElement('span');
+      marker.className = 'page-overview__marker';
+      row.appendChild(marker);
+
+      const meta = document.createElement('div');
+      meta.className = 'page-overview__meta';
+
+      const title = document.createElement('span');
+      title.className = 'page-overview__title';
+      title.textContent = detached.page.title;
+      meta.appendChild(title);
+
+      const subline = document.createElement('span');
+      subline.className = 'page-overview__subline';
+      subline.textContent = `${formatTargetLabel(parseDateInput(detached.page.targetDate) || currentDayStart())} · ${remainingLabelForPage(detached.page)}`;
+      meta.appendChild(subline);
+
+      row.appendChild(meta);
+
+      const current = document.createElement('span');
+      current.className = 'page-overview__current';
+      current.textContent = '单卡';
+      row.appendChild(current);
+
+      pageOverviewList.appendChild(row);
+    });
+  }
 }
 
 function openOverview() {
@@ -809,33 +995,141 @@ function syncJumpButtons(today, target) {
 function renderCard() {
   const today = loadSimulatedDate();
   const page = currentPage();
-  const target = currentTargetDate();
-  const remainingDaysCount = daysRemaining(today, target);
-  const seedBase = `${dayStamp(today)}::${page.id}`;
-  const rerollSeed = currentRerollSeed(today);
-  const seedText = rerollSeed ? `${seedBase}::${rerollSeed}` : seedBase;
-  const entries = pickTaglines(seedText);
-  const egg = pickEasterEgg(seedText, today, remainingDaysCount);
-  const tone = resolveTone(remainingDaysCount);
-  const badgeParts = currentDateCardParts(today);
+  const snapshot = buildSnapshotForPage(page, today);
 
-  cardNode.dataset.tone = tone;
-  currentBadgeYearNode.textContent = badgeParts.year;
-  currentBadgeDateNode.textContent = badgeParts.date;
-  currentBadgeWeekdayNode.textContent = badgeParts.weekday;
+  cardNode.dataset.tone = snapshot.tone;
+  currentBadgeYearNode.textContent = snapshot.badgeParts.year;
+  currentBadgeDateNode.textContent = snapshot.badgeParts.date;
+  currentBadgeWeekdayNode.textContent = snapshot.badgeParts.weekday;
   simDateInput.value = formatInputDate(today);
   simDateLabelNode.textContent = `模拟日期：${formatFullDateLabel(today)}`;
-  simTargetLabelNode.textContent = `当前倒计时：${page.title} · ${formatTargetLabel(target)}`;
-  toneLabelNode.textContent = toneLabel(tone);
+  simTargetLabelNode.textContent = `当前倒计时：${page.title} · ${formatTargetLabel(snapshot.target)}`;
+  toneLabelNode.textContent = toneLabel(snapshot.tone);
 
-  syncJumpButtons(today, target);
-  renderCountdown(remainingDaysCount, page.title);
-  renderPrimaryEntries(entries);
-  renderEggFooter(egg);
+  syncJumpButtons(today, snapshot.target);
+  renderCountdown(snapshot.remainingDaysCount, page.title);
+  renderPrimaryEntries(snapshot.entries);
+  renderEggFooter(snapshot.egg);
   renderPageSwitcher();
   if (previewState.overviewOpen) {
     renderOverview();
   }
+  renderDetachedCards();
+}
+
+function renderDetachedCards() {
+  if (!detachedCardLayerNode) return;
+  detachedCardLayerNode.innerHTML = '';
+
+  const today = loadSimulatedDate();
+
+  previewState.detachedCards.forEach((detached) => {
+    const shell = document.createElement('div');
+    shell.className = 'preview-card-shell preview-card-shell--detached';
+    shell.style.transform = `translate(${detached.offset.x}px, ${detached.offset.y}px)`;
+    shell.dataset.detachedId = detached.id;
+
+    const card = cardNode.cloneNode(true);
+    card.classList.add('preview-card--detached');
+    card.querySelectorAll('[id]').forEach((node) => node.removeAttribute('id'));
+    card.dataset.detachedId = detached.id;
+
+    const snapshot = buildSnapshotForPage(detached.page, today);
+    card.dataset.tone = snapshot.tone;
+
+    const titleNode = card.querySelector('.preview-card__title--count');
+    const displayNode = card.querySelector('.preview-card__count-display');
+    const badgeYearNode = card.querySelector('.preview-card__badge-year');
+    const badgeDateNode = card.querySelector('.preview-card__badge-date');
+    const badgeWeekdayNode = card.querySelector('.preview-card__badge-weekday');
+    const localQuotePanel = card.querySelector('.quote-panel__body');
+    const localQuoteFooter = card.querySelector('.quote-panel__footer');
+    const localPageSwitcher = card.querySelector('.page-switcher');
+    const localRerollButton = card.querySelector('.flower-button');
+
+    if (badgeYearNode) badgeYearNode.textContent = snapshot.badgeParts.year;
+    if (badgeDateNode) badgeDateNode.textContent = snapshot.badgeParts.date;
+    if (badgeWeekdayNode) badgeWeekdayNode.textContent = snapshot.badgeParts.weekday;
+    if (titleNode && displayNode) {
+      renderCountdown(snapshot.remainingDaysCount, detached.page.title, titleNode, displayNode);
+    }
+    if (localQuotePanel) {
+      renderPrimaryEntries(snapshot.entries, localQuotePanel);
+    }
+    if (localQuoteFooter) {
+      renderEggFooter(snapshot.egg, localQuoteFooter);
+    }
+    if (localPageSwitcher) {
+      localPageSwitcher.innerHTML = '<div class="page-switcher__dots"><span class="page-switcher__dot is-active"></span></div>';
+    }
+    if (localRerollButton) {
+      localRerollButton.addEventListener('click', () => {
+        const current = loadSimulatedDate();
+        saveRerollSeed(current);
+        renderCard();
+      });
+    }
+
+    shell.appendChild(card);
+    detachedCardLayerNode.appendChild(shell);
+    enableDetachedCardDrag(shell, card, detached.id);
+  });
+}
+
+function enableDetachedCardDrag(shell, card, detachedID) {
+  let drag = null;
+
+  card.addEventListener('pointerdown', (event) => {
+    if (event.button !== 0) return;
+    if (!canStartCardDrag(event.target) || !stageNode) return;
+
+    const stageRect = stageNode.getBoundingClientRect();
+    const shellRect = shell.getBoundingClientRect();
+    const detached = previewState.detachedCards.find((entry) => entry.id === detachedID);
+    if (!detached) return;
+
+    drag = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      initialOffset: { ...detached.offset },
+      minX: 18,
+      maxX: Math.max(18, stageRect.width - shellRect.width - 18),
+      minY: 18,
+      maxY: Math.max(18, stageRect.height - shellRect.height - 18),
+    };
+  });
+
+  card.addEventListener('pointermove', (event) => {
+    if (!drag || event.pointerId !== drag.pointerId) return;
+    const detached = previewState.detachedCards.find((entry) => entry.id === detachedID);
+    if (!detached) return;
+
+    const deltaX = event.clientX - drag.startX;
+    const deltaY = event.clientY - drag.startY;
+    if (!shell.classList.contains('is-dragging') && Math.hypot(deltaX, deltaY) < 6) {
+      return;
+    }
+
+    const nextOffset = {
+      x: clamp(drag.initialOffset.x + deltaX, drag.minX, drag.maxX),
+      y: clamp(drag.initialOffset.y + deltaY, drag.minY, drag.maxY),
+    };
+
+    detached.offset = nextOffset;
+    shell.classList.add('is-dragging');
+    shell.style.transform = `translate(${nextOffset.x}px, ${nextOffset.y}px)`;
+  });
+
+  const finish = (event) => {
+    if (!drag || (event && event.pointerId !== drag.pointerId)) return;
+    shell.classList.remove('is-dragging');
+    saveDetachedCards();
+    drag = null;
+  };
+
+  card.addEventListener('pointerup', finish);
+  card.addEventListener('pointercancel', finish);
 }
 
 function jumpToPreset(kind) {
@@ -1170,6 +1464,7 @@ function bindInteractions() {
 
 async function init() {
   initializePages();
+  previewState.detachedCards = loadDetachedCards();
   previewState.cardOffset = loadCardOffset();
   applyCardOffset();
   bindInteractions();
@@ -1182,7 +1477,7 @@ async function init() {
     if (!localStorage.getItem(pagesStorageKey)) {
       initializePages();
     }
-    sourceStatusNode.textContent = '已读取仓库中的真实文案库和权重。点页迹可切页，左右轻划可翻页，长按或右键页迹可打开倒计时总览；按住卡片空白区可拖动。左侧是预览控制，不属于 app 卡片本体。';
+    sourceStatusNode.textContent = '已读取仓库中的真实文案库和权重。点页迹可切页，拖页迹可抽出单卡，左右轻划可翻页，长按或右键页迹可打开倒计时总览；按住卡片空白区可拖动。左侧是预览控制，不属于 app 卡片本体。';
   } catch (error) {
     console.error(error);
     sourceStatusNode.textContent = '未能读取仓库源文件。请在仓库根目录运行 python3 -m http.server 8000 后再打开预览。';
