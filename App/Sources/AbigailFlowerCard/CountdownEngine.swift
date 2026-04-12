@@ -376,7 +376,7 @@ final class CountdownEngine {
                 allowedWeights[name] = weight
             }
         }
-        var categories = loadCategories(from: AbigailPaths.easterEggsDirectory, weights: allowedWeights, showEnglishFirst: config.showEnglishFirst)
+        let categories = loadCategories(from: AbigailPaths.easterEggsDirectory, weights: allowedWeights, showEnglishFirst: config.showEnglishFirst)
         let candidates = categories.enumerated().filter { !$0.element.entries.isEmpty && $0.element.weight > 0 }
         guard !candidates.isEmpty else { return nil }
         let totalWeight = candidates.reduce(0) { $0 + $1.element.weight }
