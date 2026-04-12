@@ -135,9 +135,14 @@
                 <input id="page-title-input" type="text" maxlength="18" placeholder="给日期起个名字" />
               </label>
 
-              <label class="page-editor__field" for="page-date-input">
+              <label class="page-editor__field" for="page-date-text-input">
                 <span>日期</span>
-                <input id="page-date-input" type="date" />
+                <div class="page-editor__date-row">
+                  <input id="page-date-text-input" type="text" inputmode="numeric" placeholder="2026-08-31" />
+                  <button class="page-editor__picker-button" id="page-date-picker-button" type="button">选日期</button>
+                  <input id="page-date-picker-input" class="page-editor__picker-native" type="date" tabindex="-1" aria-hidden="true" />
+                </div>
+                <p class="page-editor__hint" id="page-date-hint">可直接输入 20260831、2026-08-31；右侧可点选日期</p>
               </label>
 
               <div class="page-editor__actions">

@@ -5,6 +5,7 @@ struct CardView: View {
     @ObservedObject var viewModel: CardViewModel
     @State private var isFlowerHovered = false
     @State private var pageDraft: CountdownPageDraft?
+    @State private var draftDateText = ""
 
     private let quotePanelHeight: CGFloat = 94
 
@@ -61,6 +62,18 @@ struct CardView: View {
     private var canDeleteDraft: Bool {
         guard let draft = pageDraft else { return false }
         return !draft.isNew && viewModel.canDeleteCurrentPage
+    }
+
+    private var isDraftDateInputValid: Bool {
+        guard pageDraft != nil else { return true }
+        return parsedDraftDate(from: draftDateText) != nil
+    }
+
+    private var draftDateHintText: String {
+        if isDraftDateInputValid {
+            return "可直接输入 20260831、2026-08-31；右侧可点选日期"
+        }
+        return "请输入有效日期，例如 2026-08-31"
     }
 
     var body: some View {
@@ -437,23 +450,53 @@ struct CardView: View {
                     .foregroundColor(Color(red: 0.50, green: 0.35, blue: 0.32))
                     .tracking(0.5)
 
-                DatePicker(
-                    "目标日期",
-                    selection: draftDateBinding,
-                    displayedComponents: .date
-                )
-                .datePickerStyle(.compact)
-                .labelsHidden()
-                .padding(.horizontal, 11)
-                .padding(.vertical, 9)
-                .background(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .fill(Color.white.opacity(0.82))
-                        .overlay(
+                HStack(alignment: .center, spacing: 8) {
+                    TextField("2026-08-31", text: draftDateTextBinding)
+                        .textFieldStyle(.plain)
+                        .padding(.horizontal, 11)
+                        .padding(.vertical, 9)
+                        .background(
                             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                .stroke(Color(red: 0.79, green: 0.67, blue: 0.63).opacity(0.28), lineWidth: 1)
+                                .fill(Color.white.opacity(0.82))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                        .stroke(
+                                            isDraftDateInputValid
+                                                ? Color(red: 0.79, green: 0.67, blue: 0.63).opacity(0.28)
+                                                : Color(red: 0.76, green: 0.35, blue: 0.37).opacity(0.42),
+                                            lineWidth: 1
+                                        )
+                                )
                         )
-                )
+
+                    DatePicker(
+                        "目标日期",
+                        selection: draftDateBinding,
+                        displayedComponents: .date
+                    )
+                    .datePickerStyle(.compact)
+                    .labelsHidden()
+                    .fixedSize()
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 9)
+                    .background(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(Color.white.opacity(0.76))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                    .stroke(Color(red: 0.79, green: 0.67, blue: 0.63).opacity(0.24), lineWidth: 1)
+                            )
+                    )
+                }
+
+                Text(draftDateHintText)
+                    .font(.system(size: 10, weight: .medium, design: .rounded))
+                    .foregroundColor(
+                        isDraftDateInputValid
+                            ? Color(red: 0.52, green: 0.37, blue: 0.34)
+                            : Color(red: 0.70, green: 0.35, blue: 0.37)
+                    )
+                    .fixedSize(horizontal: false, vertical: true)
             }
 
             HStack(spacing: 8) {
@@ -484,10 +527,12 @@ struct CardView: View {
                     Text("保存")
                 }
                 .buttonStyle(EditorCapsuleButtonStyle(fill: theme.quoteAccent.opacity(0.18), stroke: theme.quoteAccent.opacity(0.24), text: Color(red: 0.37, green: 0.23, blue: 0.21)))
+                .disabled(!isDraftDateInputValid)
+                .opacity(isDraftDateInputValid ? 1.0 : 0.55)
             }
         }
         .padding(14)
-        .frame(width: 236)
+        .frame(width: 290)
         .background(
             RoundedRectangle(cornerRadius: 20, style: .continuous)
                 .fill(
@@ -522,6 +567,19 @@ struct CardView: View {
             get: { pageDraft?.targetDate ?? Date() },
             set: { newValue in
                 updatePageDraft { $0.targetDate = newValue }
+                syncDraftDateText(from: newValue)
+            }
+        )
+    }
+
+    private var draftDateTextBinding: Binding<String> {
+        Binding(
+            get: { draftDateText },
+            set: { newValue in
+                draftDateText = newValue
+                if let parsed = parsedDraftDate(from: newValue) {
+                    updatePageDraft { $0.targetDate = parsed }
+                }
             }
         )
     }
@@ -605,32 +663,92 @@ struct CardView: View {
     }
 
     private func openCurrentPageEditor() {
-        pageDraft = viewModel.beginEditingCurrentPage()
+        let draft = viewModel.beginEditingCurrentPage()
+        pageDraft = draft
+        syncDraftDateText(from: draft.targetDate)
     }
 
     private func openNewPageEditor() {
-        pageDraft = viewModel.beginCreatingPage()
+        let draft = viewModel.beginCreatingPage()
+        pageDraft = draft
+        syncDraftDateText(from: draft.targetDate)
     }
 
     private func closePageEditor() {
         pageDraft = nil
+        draftDateText = ""
     }
 
     private func saveDraft() {
-        guard let draft = pageDraft else { return }
-        viewModel.savePage(from: draft)
+        guard pageDraft != nil, let parsedDate = parsedDraftDate(from: draftDateText) else { return }
+        updatePageDraft { $0.targetDate = parsedDate }
+        guard let normalizedDraft = pageDraft else { return }
+        viewModel.savePage(from: normalizedDraft)
         pageDraft = nil
+        draftDateText = ""
     }
 
     private func deleteCurrentPage() {
         viewModel.deleteCurrentPage()
         pageDraft = nil
+        draftDateText = ""
     }
 
     private func updatePageDraft(_ update: (inout CountdownPageDraft) -> Void) {
         guard var draft = pageDraft else { return }
         update(&draft)
         pageDraft = draft
+    }
+
+    private func syncDraftDateText(from date: Date) {
+        let components = Calendar(identifier: .gregorian).dateComponents([.year, .month, .day], from: date)
+        let year = components.year ?? 2026
+        let month = components.month ?? 1
+        let day = components.day ?? 1
+        draftDateText = String(format: "%04d-%02d-%02d", year, month, day)
+    }
+
+    private func parsedDraftDate(from raw: String) -> Date? {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+
+        let digitsOnly = trimmed.filter(\.isNumber)
+        let values: [Int]
+
+        if digitsOnly.count == 8 {
+            values = [
+                Int(digitsOnly.prefix(4)) ?? 0,
+                Int(digitsOnly.dropFirst(4).prefix(2)) ?? 0,
+                Int(digitsOnly.suffix(2)) ?? 0,
+            ]
+        } else {
+            let parts = trimmed
+                .split(whereSeparator: { !$0.isNumber })
+                .compactMap { Int($0) }
+            guard parts.count == 3 else { return nil }
+            values = parts
+        }
+
+        let year = values[0]
+        let month = values[1]
+        let day = values[2]
+
+        var components = DateComponents()
+        components.calendar = Calendar(identifier: .gregorian)
+        components.year = year
+        components.month = month
+        components.day = day
+
+        guard
+            let date = components.calendar?.date(from: components),
+            components.calendar?.component(.year, from: date) == year,
+            components.calendar?.component(.month, from: date) == month,
+            components.calendar?.component(.day, from: date) == day
+        else {
+            return nil
+        }
+
+        return components.calendar?.startOfDay(for: date)
     }
 }
 

@@ -92,10 +92,14 @@ const pageEditorEyebrow = document.getElementById('page-editor-eyebrow');
 const pageEditorTitle = document.getElementById('page-editor-title');
 const pageEditorClose = document.getElementById('page-editor-close');
 const pageTitleInput = document.getElementById('page-title-input');
-const pageDateInput = document.getElementById('page-date-input');
+const pageDateTextInput = document.getElementById('page-date-text-input');
+const pageDatePickerButton = document.getElementById('page-date-picker-button');
+const pageDatePickerInput = document.getElementById('page-date-picker-input');
+const pageDateHint = document.getElementById('page-date-hint');
 const pageNewButton = document.getElementById('page-new-button');
 const pageDeleteButton = document.getElementById('page-delete-button');
 const pageCancelButton = document.getElementById('page-cancel-button');
+const pageSaveButton = pageEditorForm.querySelector('[type="submit"]');
 
 function cloneDataMap(map) {
   return Object.fromEntries(
@@ -127,11 +131,65 @@ function parseDateInput(value) {
   return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
 }
 
+function parseFlexibleDateInput(value) {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  const digitsOnly = trimmed.replace(/\D/g, '');
+  let parts = null;
+
+  if (digitsOnly.length === 8) {
+    parts = [
+      Number(digitsOnly.slice(0, 4)),
+      Number(digitsOnly.slice(4, 6)),
+      Number(digitsOnly.slice(6, 8)),
+    ];
+  } else {
+    const parsed = trimmed.split(/\D+/).filter(Boolean).map((part) => Number(part));
+    if (parsed.length === 3) {
+      parts = parsed;
+    }
+  }
+
+  if (!parts) return null;
+
+  const [year, month, day] = parts;
+  const candidate = new Date(year, month - 1, day);
+  if (
+    candidate.getFullYear() !== year
+    || candidate.getMonth() !== month - 1
+    || candidate.getDate() !== day
+  ) {
+    return null;
+  }
+
+  return normalizeDate(candidate);
+}
+
 function formatInputDate(date) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
+}
+
+function syncEditorDateState() {
+  const parsed = parseFlexibleDateInput(pageDateTextInput.value);
+  const isValid = Boolean(parsed);
+  pageDateTextInput.classList.toggle('is-invalid', !isValid);
+  pageDateHint.classList.toggle('is-invalid', !isValid);
+  pageDateHint.textContent = isValid
+    ? '可直接输入 20260831、2026-08-31；右侧可点选日期'
+    : '请输入有效日期，例如 2026-08-31';
+  pageSaveButton.disabled = !isValid;
+
+  if (parsed) {
+    const formatted = formatInputDate(parsed);
+    pageDatePickerInput.value = formatted;
+    if (previewState.editor) {
+      previewState.editor.targetDate = formatted;
+    }
+  }
 }
 
 function dayStamp(date) {
@@ -734,7 +792,9 @@ function openEditor(isNew) {
   pageEditorEyebrow.textContent = isNew ? '新建倒计时页' : '编辑当前倒计时';
   pageEditorTitle.textContent = isNew ? '给新的日期页起个名字' : '双击标题或日期牌都能打开这里';
   pageTitleInput.value = previewState.editor.title;
-  pageDateInput.value = previewState.editor.targetDate;
+  pageDateTextInput.value = previewState.editor.targetDate;
+  pageDatePickerInput.value = previewState.editor.targetDate;
+  syncEditorDateState();
   pageNewButton.hidden = isNew;
   pageDeleteButton.hidden = isNew || previewState.pages.length <= 1;
   pageEditorNode.hidden = false;
@@ -751,7 +811,8 @@ function saveEditor() {
   if (!previewState.editor) return;
 
   const draftTitle = pageTitleInput.value.trim() || '新的日期';
-  const draftDate = parseDateInput(pageDateInput.value) || addDays(currentTargetDate(), 30);
+  const draftDate = parseFlexibleDateInput(pageDateTextInput.value);
+  if (!draftDate) return;
   const page = normalizePage({
     id: previewState.editor.sourcePageID || makeID(),
     title: draftTitle,
@@ -834,6 +895,20 @@ function bindInteractions() {
 
   pageEditorScrim.addEventListener('click', closeEditor);
   pageEditorClose.addEventListener('click', closeEditor);
+  pageDateTextInput.addEventListener('input', syncEditorDateState);
+  pageDatePickerButton.addEventListener('click', () => {
+    if (typeof pageDatePickerInput.showPicker === 'function') {
+      pageDatePickerInput.showPicker();
+    } else {
+      pageDatePickerInput.focus();
+      pageDatePickerInput.click();
+    }
+  });
+  pageDatePickerInput.addEventListener('change', () => {
+    if (!pageDatePickerInput.value) return;
+    pageDateTextInput.value = pageDatePickerInput.value;
+    syncEditorDateState();
+  });
   pageNewButton.addEventListener('click', () => openEditor(true));
   pageCancelButton.addEventListener('click', closeEditor);
   pageDeleteButton.addEventListener('click', deleteCurrentPage);
