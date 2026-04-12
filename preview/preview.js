@@ -71,6 +71,7 @@ const currentBadgeDateNode = document.getElementById('current-badge-date');
 const currentBadgeWeekdayNode = document.getElementById('current-badge-weekday');
 const cardTitleNode = document.getElementById('card-title');
 const countDisplayNode = document.getElementById('count-display');
+const countdownBlock = document.getElementById('countdown-block');
 const pageSwitcherNode = document.getElementById('page-switcher');
 const quotePanelNode = document.getElementById('quote-panel');
 const quoteFooterNode = document.getElementById('quote-footer');
@@ -947,30 +948,32 @@ function bindInteractions() {
     event.stopPropagation();
   }, true);
 
-  countdownBlock.addEventListener('pointerdown', (event) => {
-    if (previewState.editor || previewState.overviewOpen) return;
-    swipeStartX = event.clientX;
-    swipeStartY = event.clientY;
-  });
+  if (countdownBlock) {
+    countdownBlock.addEventListener('pointerdown', (event) => {
+      if (previewState.editor || previewState.overviewOpen) return;
+      swipeStartX = event.clientX;
+      swipeStartY = event.clientY;
+    });
 
-  countdownBlock.addEventListener('pointerup', (event) => {
-    if (previewState.editor || previewState.overviewOpen) return;
-    const deltaX = event.clientX - swipeStartX;
-    const deltaY = event.clientY - swipeStartY;
-    if (Math.abs(deltaX) <= 36 || Math.abs(deltaX) <= Math.abs(deltaY)) return;
+    countdownBlock.addEventListener('pointerup', (event) => {
+      if (previewState.editor || previewState.overviewOpen) return;
+      const deltaX = event.clientX - swipeStartX;
+      const deltaY = event.clientY - swipeStartY;
+      if (Math.abs(deltaX) <= 36 || Math.abs(deltaX) <= Math.abs(deltaY)) return;
 
-    if (deltaX < 0) {
-      const currentIndex = previewState.pages.findIndex((page) => page.id === previewState.selectedPageID);
-      const nextIndex = (currentIndex + 1) % previewState.pages.length;
-      previewState.selectedPageID = previewState.pages[nextIndex].id;
-    } else {
-      const currentIndex = previewState.pages.findIndex((page) => page.id === previewState.selectedPageID);
-      const prevIndex = (currentIndex - 1 + previewState.pages.length) % previewState.pages.length;
-      previewState.selectedPageID = previewState.pages[prevIndex].id;
-    }
-    savePages();
-    renderCard();
-  });
+      if (deltaX < 0) {
+        const currentIndex = previewState.pages.findIndex((page) => page.id === previewState.selectedPageID);
+        const nextIndex = (currentIndex + 1) % previewState.pages.length;
+        previewState.selectedPageID = previewState.pages[nextIndex].id;
+      } else {
+        const currentIndex = previewState.pages.findIndex((page) => page.id === previewState.selectedPageID);
+        const prevIndex = (currentIndex - 1 + previewState.pages.length) % previewState.pages.length;
+        previewState.selectedPageID = previewState.pages[prevIndex].id;
+      }
+      savePages();
+      renderCard();
+    });
+  }
 
   jumpTodayButton.addEventListener('click', () => {
     const today = currentDayStart();
