@@ -596,7 +596,7 @@ struct CardView: View {
     private func overviewPageRow(cardID: UUID, page: CountdownOverviewPage) -> some View {
         let canDetach = pageCount(for: cardID) > 1
 
-        HStack(spacing: 8) {
+        return HStack(spacing: 8) {
             Button(action: {
                 viewModel.selectOverviewPage(cardID: cardID, pageID: page.id)
                 closeOverview()
