@@ -107,10 +107,13 @@ final class WorkspaceController: ObservableObject {
 
     @discardableResult
     func createStandaloneCard(relativeTo cardID: UUID?, now: Date = Date(), frame: SavedCardFrame? = nil) -> UUID {
-        let relativeCard = cardID.flatMap { requestedCardID in
-            card(for: requestedCardID)
+        let relativePage: CountdownPage?
+        if let cardID {
+            let sourceCard = card(for: cardID)
+            relativePage = currentPage(in: sourceCard)
+        } else {
+            relativePage = nil
         }
-        let relativePage = currentPage(in: relativeCard)
         let draft = store.newDraft(relativeTo: relativePage, now: now)
         let page = store.normalizedPage(from: draft)
         let card = CountdownCardDocument(pages: [page], selectedPageID: page.id, frame: frame)
