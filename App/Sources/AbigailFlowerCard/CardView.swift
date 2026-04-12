@@ -116,11 +116,8 @@ struct CardView: View {
     }
 
     private var dateColumn: some View {
-        VStack(alignment: .trailing, spacing: 10) {
-            currentDateBadge
-            pageSwitcher
-        }
-        .frame(width: 122, alignment: .trailing)
+        currentDateBadge
+        .frame(width: 88, alignment: .trailing)
         .padding(.top, 4)
     }
 
@@ -143,30 +140,29 @@ struct CardView: View {
             pageControlButton(systemName: "plus", help: "新建日期页", action: openNewPageEditor)
         }
         .padding(.horizontal, 8)
-        .padding(.vertical, 6)
+        .padding(.vertical, 3)
         .background(
             Capsule()
-                .fill(Color.white.opacity(0.44))
+                .fill(Color.white.opacity(0.16))
                 .overlay(
                     Capsule()
-                        .stroke(theme.quoteAccent.opacity(0.18), lineWidth: 1)
+                        .stroke(theme.quoteAccent.opacity(0.10), lineWidth: 1)
                 )
         )
-        .shadow(color: Color(red: 0.33, green: 0.19, blue: 0.17).opacity(0.05), radius: 10, x: 0, y: 6)
-        .padding(.trailing, 2)
+        .fixedSize()
     }
 
     private func pageControlButton(systemName: String, help: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             ZStack {
                 Circle()
-                    .fill(Color.white.opacity(0.62))
-                    .frame(width: 18, height: 18)
+                    .fill(Color.white.opacity(0.54))
+                    .frame(width: 16, height: 16)
                 Circle()
-                    .stroke(theme.quoteAccent.opacity(0.18), lineWidth: 1)
-                    .frame(width: 18, height: 18)
+                    .stroke(theme.quoteAccent.opacity(0.14), lineWidth: 1)
+                    .frame(width: 16, height: 16)
                 Image(systemName: systemName)
-                    .font(.system(size: 8.5, weight: .bold, design: .rounded))
+                    .font(.system(size: 7.5, weight: .bold, design: .rounded))
                     .foregroundColor(Color(red: 0.42, green: 0.28, blue: 0.26))
             }
         }
@@ -257,16 +253,20 @@ struct CardView: View {
     }
 
     private var countdownBlock: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(viewModel.content.title)
-                .font(.system(size: 17, weight: .semibold, design: .serif))
-                .foregroundColor(Color(red: 0.34, green: 0.20, blue: 0.19))
-                .tracking(0.7)
-                .padding(.leading, 2)
-                .lineLimit(1)
-                .contentShape(Rectangle())
-                .onTapGesture(count: 2, perform: openCurrentPageEditor)
-                .help("双击编辑当前倒计时页")
+        VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text(viewModel.content.title)
+                    .font(.system(size: 17, weight: .semibold, design: .serif))
+                    .foregroundColor(Color(red: 0.34, green: 0.20, blue: 0.19))
+                    .tracking(0.7)
+                    .padding(.leading, 2)
+                    .lineLimit(1)
+                    .contentShape(Rectangle())
+                    .onTapGesture(count: 2, perform: openCurrentPageEditor)
+                    .help("双击编辑当前倒计时页")
+
+                pageSwitcher
+            }
 
             if viewModel.content.daysRemaining == 0 {
                 Text("今天")

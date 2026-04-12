@@ -68,11 +68,12 @@ const currentBadgeButton = document.getElementById('current-badge-button');
 const currentBadgeYearNode = document.getElementById('current-badge-year');
 const currentBadgeDateNode = document.getElementById('current-badge-date');
 const currentBadgeWeekdayNode = document.getElementById('current-badge-weekday');
+const cardTitleNode = document.getElementById('card-title');
+const countDisplayNode = document.getElementById('count-display');
 const pageSwitcherNode = document.getElementById('page-switcher');
 const quotePanelNode = document.getElementById('quote-panel');
 const quoteFooterNode = document.getElementById('quote-footer');
 const rerollButton = document.getElementById('reroll-button');
-const countdownBlock = document.getElementById('countdown-block');
 const simDateInput = document.getElementById('sim-date');
 const jumpTodayButton = document.getElementById('jump-today');
 const shiftButtons = Array.from(document.querySelectorAll('[data-shift-days]'));
@@ -408,12 +409,12 @@ function resolveTone(days) {
 }
 
 function renderCountdown(days, titleLine) {
+  cardTitleNode.textContent = titleLine;
   const absolute = Math.abs(days);
   const unit = days < 0 ? '天前' : '天';
 
   if (days === 0) {
-    countdownBlock.innerHTML = `
-      <p class="preview-card__title preview-card__title--count">${titleLine}</p>
+    countDisplayNode.innerHTML = `
       <div class="preview-card__countline">
         <span class="preview-card__days">今天</span>
       </div>
@@ -424,8 +425,7 @@ function renderCountdown(days, titleLine) {
     return;
   }
 
-  countdownBlock.innerHTML = `
-    <p class="preview-card__title preview-card__title--count">${titleLine}</p>
+  countDisplayNode.innerHTML = `
     <div class="preview-card__countline">
       <span class="preview-card__days">${absolute}</span>
       <span class="preview-card__unit">${unit}</span>
@@ -794,7 +794,7 @@ function bindInteractions() {
     openEditor(false);
   });
 
-  countdownBlock.addEventListener('dblclick', () => {
+  cardTitleNode.addEventListener('dblclick', () => {
     openEditor(false);
   });
 
@@ -855,7 +855,7 @@ async function init() {
     if (!localStorage.getItem(pagesStorageKey)) {
       initializePages();
     }
-    sourceStatusNode.textContent = '已读取仓库中的真实文案库和权重。双击标题或日期牌可编辑当前倒计时，点右侧圆点切页。';
+    sourceStatusNode.textContent = '已读取仓库中的真实文案库和权重。双击标题或日期牌可编辑当前倒计时，标题下方的小切页器可切换多个倒计时。';
   } catch (error) {
     console.error(error);
     sourceStatusNode.textContent = '未能读取仓库源文件。请在仓库根目录运行 python3 -m http.server 8000 后再打开预览。';

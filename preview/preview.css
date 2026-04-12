@@ -357,7 +357,7 @@ body::before {
 
 .preview-card__hero {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 122px;
+  grid-template-columns: minmax(0, 1fr) 88px;
   align-items: start;
   gap: 16px;
 }
@@ -398,8 +398,18 @@ body::before {
   font-size: 17px;
   letter-spacing: 0.04em;
   padding-left: 2px;
-  margin-bottom: 4px;
+  margin-bottom: 0;
   white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.preview-card__title-row {
+  display: grid;
+  justify-items: start;
+  gap: 6px;
+  min-width: 0;
 }
 
 .preview-card__badge {
@@ -452,14 +462,16 @@ body::before {
 .page-switcher {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  gap: 7px;
-  min-height: 30px;
-  padding: 6px 8px;
+  justify-content: flex-start;
+  gap: 6px;
+  min-height: 26px;
+  padding: 4px 7px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.44);
-  border: 1px solid rgba(174, 133, 128, 0.18);
-  box-shadow: 0 10px 18px rgba(84, 47, 40, 0.05);
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(174, 133, 128, 0.10);
+  box-shadow: none;
+  flex-shrink: 0;
+  align-self: flex-start;
 }
 
 .page-switcher__nav,
@@ -470,18 +482,18 @@ body::before {
   margin: 0;
   display: grid;
   place-items: center;
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.62);
-  border: 1px solid rgba(174, 133, 128, 0.18);
+  background: rgba(255, 255, 255, 0.54);
+  border: 1px solid rgba(174, 133, 128, 0.14);
   color: #573a37;
   cursor: pointer;
 }
 
 .page-switcher__nav,
 .page-switcher__add {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   line-height: 1;
   transition: transform 160ms ease, background 160ms ease;
@@ -496,10 +508,11 @@ body::before {
 .page-switcher__count {
   min-width: 34px;
   text-align: center;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
   color: #5f3e3a;
+  white-space: nowrap;
 }
 
 .page-switcher__divider {
@@ -541,10 +554,15 @@ body::before {
 .preview-card__countdown {
   margin-top: 0;
   display: grid;
-  gap: 4px;
+  gap: 10px;
   max-width: none;
   min-width: 0;
   padding-top: 8px;
+}
+
+.preview-card__count-display {
+  display: grid;
+  gap: 4px;
 }
 
 .preview-card__countline {
@@ -903,8 +921,17 @@ body::before {
   }
 
   .preview-card__hero {
-    grid-template-columns: minmax(0, 1fr) 112px;
+    grid-template-columns: minmax(0, 1fr) 84px;
     gap: 14px;
+  }
+
+  .preview-card__title-row {
+    gap: 6px;
+  }
+
+  .page-switcher {
+    transform-origin: left center;
+    scale: 0.94;
   }
 
   .preview-card__days {
