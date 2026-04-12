@@ -482,21 +482,44 @@ function renderEggFooter(entry) {
 
 function renderPageSwitcher() {
   const activePage = currentPage();
+  const activeIndex = Math.max(0, previewState.pages.findIndex((page) => page.id === activePage.id));
   pageSwitcherNode.innerHTML = '';
 
-  previewState.pages.forEach((page) => {
-    const button = document.createElement('button');
-    button.className = `page-switcher__dot${page.id === activePage.id ? ' is-active' : ''}`;
-    button.type = 'button';
-    button.title = `${page.title} · ${page.targetDate}`;
-    button.innerHTML = '<span></span>';
-    button.addEventListener('click', () => {
-      previewState.selectedPageID = page.id;
-      savePages();
-      renderCard();
-    });
-    pageSwitcherNode.appendChild(button);
+  const prevButton = document.createElement('button');
+  prevButton.className = 'page-switcher__nav';
+  prevButton.type = 'button';
+  prevButton.title = '上一页';
+  prevButton.textContent = '‹';
+  prevButton.addEventListener('click', () => {
+    const nextIndex = (activeIndex - 1 + previewState.pages.length) % previewState.pages.length;
+    previewState.selectedPageID = previewState.pages[nextIndex].id;
+    savePages();
+    renderCard();
   });
+  pageSwitcherNode.appendChild(prevButton);
+
+  const countNode = document.createElement('span');
+  countNode.className = 'page-switcher__count';
+  countNode.textContent = `${activeIndex + 1} / ${Math.max(previewState.pages.length, 1)}`;
+  pageSwitcherNode.appendChild(countNode);
+
+  const nextButton = document.createElement('button');
+  nextButton.className = 'page-switcher__nav';
+  nextButton.type = 'button';
+  nextButton.title = '下一页';
+  nextButton.textContent = '›';
+  nextButton.addEventListener('click', () => {
+    const nextIndex = (activeIndex + 1) % previewState.pages.length;
+    previewState.selectedPageID = previewState.pages[nextIndex].id;
+    savePages();
+    renderCard();
+  });
+  pageSwitcherNode.appendChild(nextButton);
+
+  const divider = document.createElement('span');
+  divider.className = 'page-switcher__divider';
+  divider.setAttribute('aria-hidden', 'true');
+  pageSwitcherNode.appendChild(divider);
 
   const addButton = document.createElement('button');
   addButton.className = 'page-switcher__add';

@@ -43,6 +43,10 @@ struct CardView: View {
         pageDraft != nil
     }
 
+    private var currentPageIndex: Int {
+        (viewModel.pages.firstIndex(where: { $0.id == viewModel.currentPage.id }) ?? 0) + 1
+    }
+
     private var canDeleteDraft: Bool {
         guard let draft = pageDraft else { return false }
         return !draft.isNew && viewModel.canDeleteCurrentPage
@@ -116,45 +120,58 @@ struct CardView: View {
             currentDateBadge
             pageSwitcher
         }
-        .frame(width: 98, alignment: .trailing)
+        .frame(width: 122, alignment: .trailing)
         .padding(.top, 4)
     }
 
     private var pageSwitcher: some View {
-        HStack(spacing: 6) {
-            ForEach(viewModel.pages) { page in
-                Button {
-                    viewModel.selectPage(id: page.id)
-                } label: {
-                    Capsule()
-                        .fill(page.id == viewModel.currentPage.id ? theme.quoteAccent.opacity(0.92) : theme.quoteAccent.opacity(0.26))
-                        .frame(width: page.id == viewModel.currentPage.id ? 18 : 7, height: 7)
-                        .overlay(
-                            Capsule()
-                                .stroke(Color.white.opacity(page.id == viewModel.currentPage.id ? 0.42 : 0.16), lineWidth: 0.6)
-                        )
-                }
-                .buttonStyle(.plain)
-                .help(page.title)
-            }
+        HStack(spacing: 7) {
+            pageControlButton(systemName: "chevron.left", help: "上一页", action: viewModel.selectPreviousPage)
 
-            Button(action: openNewPageEditor) {
-                ZStack {
-                    Circle()
-                        .fill(Color.white.opacity(0.52))
-                        .frame(width: 18, height: 18)
-                    Circle()
-                        .stroke(theme.quoteAccent.opacity(0.22), lineWidth: 1)
-                        .frame(width: 18, height: 18)
-                    Image(systemName: "plus")
-                        .font(.system(size: 9, weight: .bold, design: .rounded))
-                        .foregroundColor(Color(red: 0.42, green: 0.28, blue: 0.26))
-                }
-            }
-            .buttonStyle(.plain)
-            .help("新建日期页")
+            Text("\(currentPageIndex) / \(max(viewModel.pages.count, 1))")
+                .font(.system(size: 11, weight: .bold, design: .rounded))
+                .monospacedDigit()
+                .foregroundColor(Color(red: 0.44, green: 0.30, blue: 0.28))
+                .frame(minWidth: 34)
+
+            pageControlButton(systemName: "chevron.right", help: "下一页", action: viewModel.selectNextPage)
+
+            Capsule()
+                .fill(theme.quoteAccent.opacity(0.18))
+                .frame(width: 1, height: 14)
+
+            pageControlButton(systemName: "plus", help: "新建日期页", action: openNewPageEditor)
         }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
+        .background(
+            Capsule()
+                .fill(Color.white.opacity(0.44))
+                .overlay(
+                    Capsule()
+                        .stroke(theme.quoteAccent.opacity(0.18), lineWidth: 1)
+                )
+        )
+        .shadow(color: Color(red: 0.33, green: 0.19, blue: 0.17).opacity(0.05), radius: 10, x: 0, y: 6)
         .padding(.trailing, 2)
+    }
+
+    private func pageControlButton(systemName: String, help: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            ZStack {
+                Circle()
+                    .fill(Color.white.opacity(0.62))
+                    .frame(width: 18, height: 18)
+                Circle()
+                    .stroke(theme.quoteAccent.opacity(0.18), lineWidth: 1)
+                    .frame(width: 18, height: 18)
+                Image(systemName: systemName)
+                    .font(.system(size: 8.5, weight: .bold, design: .rounded))
+                    .foregroundColor(Color(red: 0.42, green: 0.28, blue: 0.26))
+            }
+        }
+        .buttonStyle(.plain)
+        .help(help)
     }
 
     private var embeddedRerollButton: some View {
