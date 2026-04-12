@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>阿比盖尔之花 · 网页模拟预览</title>
+    <title>阿比盖尔之花 · 预览控制台</title>
     <link rel="stylesheet" href="./preview.css" />
   </head>
   <body>
@@ -13,11 +13,11 @@
 
       <section class="stage">
         <aside class="stage__note">
-          <p class="stage__eyebrow">网页模拟版</p>
+          <p class="stage__eyebrow">预览控制</p>
           <h1>阿比盖尔之花</h1>
           <p class="stage__copy">
-            这是原生 macOS 卡片 app 的网页模拟预览。它会直接读取仓库里的真实文案库和权重，
-            现在也可以模拟多个独立倒计时页，并直接在卡片里双击标题或日期牌编辑当前页。
+            这里是网页预览的控制台，不属于 app 本体。它会直接读取仓库里的真实文案库和权重，
+            用来模拟当前日期、切换倒计时页，并验证卡片的交互和层级。
           </p>
           <div class="stage__meta">
             <span id="tagline-count">副标题读取中</span>
@@ -25,11 +25,11 @@
             <span id="tone-label">主题读取中</span>
           </div>
 
-          <section class="preview-controls" aria-label="日期模拟器">
+          <section class="preview-controls" aria-label="预览控制台">
             <div class="preview-controls__head">
               <div>
-                <p class="preview-controls__eyebrow">日期模拟</p>
-                <h2>换个日子看看</h2>
+                <p class="preview-controls__eyebrow">预览时间</p>
+                <h2>控制当前预览</h2>
               </div>
               <button class="preview-controls__today" id="jump-today" type="button">回到今天</button>
             </div>
@@ -55,7 +55,7 @@
 
             <div class="preview-controls__summary">
               <p id="sim-date-label">模拟日期：2026.03.24 周二</p>
-              <p id="sim-target-label">当前页：距离 8.31 · 2026.08.31</p>
+              <p id="sim-target-label">当前倒计时：距离 8.31 · 2026.08.31</p>
             </div>
 
             <p class="preview-controls__status" id="source-status">正在读取仓库中的真实文案库…</p>
@@ -89,8 +89,8 @@
                   class="preview-card__badge-button"
                   id="current-badge-button"
                   type="button"
-                  aria-label="显示当前日期，双击可编辑当前倒计时页"
-                  title="双击编辑当前倒计时页"
+                  aria-label="显示当前日期，双击可编辑倒计时"
+                  title="双击编辑倒计时"
                 >
                   <div class="preview-card__badge" id="current-badge" aria-hidden="true">
                     <span class="preview-card__badge-year" id="current-badge-year">2026</span>
@@ -124,8 +124,8 @@
             <form class="page-editor__panel" id="page-editor-form">
               <div class="page-editor__head">
                 <div>
-                  <p class="page-editor__eyebrow" id="page-editor-eyebrow">编辑当前倒计时</p>
-                  <h3 id="page-editor-title">双击标题或日期牌都能打开这里</h3>
+                  <p class="page-editor__eyebrow" id="page-editor-eyebrow">编辑倒计时</p>
+                  <h3 id="page-editor-title">修改标签和目标日期</h3>
                 </div>
                 <button class="page-editor__close" id="page-editor-close" type="button" aria-label="关闭">×</button>
               </div>
@@ -158,11 +158,11 @@
 
           <div class="page-overview" id="page-overview" hidden>
             <button class="page-overview__scrim" id="page-overview-scrim" type="button" aria-label="关闭"></button>
-            <section class="page-overview__panel" aria-label="所有倒计时">
+            <section class="page-overview__panel" aria-label="倒计时总览">
               <div class="page-overview__head">
                 <div>
-                  <p class="page-overview__eyebrow">所有倒计时</p>
-                  <h3>随时找回、切换和整理你的倒计时</h3>
+                  <p class="page-overview__eyebrow">倒计时总览</p>
+                  <h3>切换、找回和整理你的倒计时</h3>
                 </div>
                 <button class="page-overview__close" id="page-overview-close" type="button" aria-label="关闭">×</button>
               </div>

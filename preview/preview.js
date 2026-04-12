@@ -784,7 +784,7 @@ function renderCard() {
   currentBadgeWeekdayNode.textContent = badgeParts.weekday;
   simDateInput.value = formatInputDate(today);
   simDateLabelNode.textContent = `模拟日期：${formatFullDateLabel(today)}`;
-  simTargetLabelNode.textContent = `当前页：${page.title} · ${formatTargetLabel(target)}`;
+  simTargetLabelNode.textContent = `当前倒计时：${page.title} · ${formatTargetLabel(target)}`;
   toneLabelNode.textContent = toneLabel(tone);
 
   syncJumpButtons(today, target);
@@ -838,8 +838,8 @@ function openEditor(isNew) {
         targetDate: page.targetDate,
       };
 
-  pageEditorEyebrow.textContent = isNew ? '新建倒计时页' : '编辑当前倒计时';
-  pageEditorTitle.textContent = isNew ? '给新的日期页起个名字' : '双击标题或日期牌都能打开这里';
+  pageEditorEyebrow.textContent = isNew ? '新建倒计时' : '编辑倒计时';
+  pageEditorTitle.textContent = isNew ? '给新的倒计时起个名字' : '修改标签和目标日期';
   pageTitleInput.value = previewState.editor.title;
   pageDateTextInput.value = previewState.editor.targetDate;
   pageDatePickerInput.value = previewState.editor.targetDate;
@@ -1057,7 +1057,7 @@ async function init() {
     if (!localStorage.getItem(pagesStorageKey)) {
       initializePages();
     }
-    sourceStatusNode.textContent = '已读取仓库中的真实文案库和权重。点页迹可切页，左右轻划可翻页，长按或右键页迹可打开倒计时总览。';
+    sourceStatusNode.textContent = '已读取仓库中的真实文案库和权重。点页迹可切页，左右轻划可翻页，长按或右键页迹可打开倒计时总览。左侧是预览控制，不属于 app 卡片本体。';
   } catch (error) {
     console.error(error);
     sourceStatusNode.textContent = '未能读取仓库源文件。请在仓库根目录运行 python3 -m http.server 8000 后再打开预览。';

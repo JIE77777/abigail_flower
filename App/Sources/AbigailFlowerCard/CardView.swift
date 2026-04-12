@@ -98,13 +98,13 @@ struct CardView: View {
         .frame(width: viewModel.panelSize.width, height: viewModel.panelSize.height)
         .background(Color.clear)
         .contextMenu {
-            Button("编辑当前日期") {
+            Button("编辑倒计时") {
                 openCurrentPageEditor()
             }
-            Button("查看所有倒计时") {
+            Button("打开倒计时总览") {
                 openOverview()
             }
-            Button("新建日期页") {
+            Button("新建倒计时") {
                 openNewPageEditor()
             }
             Divider()
@@ -151,11 +151,11 @@ struct CardView: View {
         .contentShape(Rectangle())
         .onLongPressGesture(minimumDuration: 0.35, perform: openOverview)
         .contextMenu {
-            Button("查看所有倒计时") {
+            Button("打开倒计时总览") {
                 openOverview()
             }
         }
-        .help("点击页迹切换倒计时，长按查看全部倒计时")
+        .help("点击页迹切换倒计时，长按打开倒计时总览")
     }
 
     private func pageDot(for index: Int) -> some View {
@@ -251,7 +251,7 @@ struct CardView: View {
         .shadow(color: Color(red: 0.33, green: 0.19, blue: 0.17).opacity(0.07), radius: 12, x: 0, y: 8)
         .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         .onTapGesture(count: 2, perform: openCurrentPageEditor)
-        .help("双击可编辑当前倒计时页")
+        .help("双击可编辑倒计时")
     }
 
     private var countdownBlock: some View {
@@ -267,7 +267,7 @@ struct CardView: View {
                     .lineLimit(1)
                     .contentShape(Rectangle())
                     .onTapGesture(count: 2, perform: openCurrentPageEditor)
-                    .help("双击编辑当前倒计时页")
+                    .help("双击编辑倒计时")
             }
 
             if viewModel.content.daysRemaining == 0 {
@@ -376,10 +376,10 @@ struct CardView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("所有倒计时")
+                    Text("倒计时总览")
                         .font(.system(size: 14, weight: .semibold, design: .serif))
                         .foregroundColor(Color(red: 0.30, green: 0.18, blue: 0.17))
-                    Text("随时找回、切换和整理你的倒计时")
+                    Text("切换、找回和整理你的倒计时")
                         .font(.system(size: 10, weight: .medium, design: .rounded))
                         .foregroundColor(Color(red: 0.52, green: 0.37, blue: 0.34))
                 }
@@ -419,7 +419,7 @@ struct CardView: View {
                     closeOverview()
                     openNewPageEditor()
                 }) {
-                    Text("新建页")
+                    Text("新建倒计时")
                 }
                 .buttonStyle(EditorCapsuleButtonStyle(fill: Color.white.opacity(0.56), stroke: Color(red: 0.79, green: 0.67, blue: 0.63).opacity(0.24), text: Color(red: 0.44, green: 0.30, blue: 0.28)))
 
@@ -457,10 +457,10 @@ struct CardView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(pageDraft?.isNew == true ? "新建日期页" : "编辑当前日期")
+                    Text(pageDraft?.isNew == true ? "新建倒计时" : "编辑倒计时")
                         .font(.system(size: 14, weight: .semibold, design: .serif))
                         .foregroundColor(Color(red: 0.30, green: 0.18, blue: 0.17))
-                    Text("双击标题或日期牌都能打开这里")
+                    Text(pageDraft?.isNew == true ? "给新的倒计时起个名字" : "修改标签和目标日期")
                         .font(.system(size: 10, weight: .medium, design: .rounded))
                         .foregroundColor(Color(red: 0.52, green: 0.37, blue: 0.34))
                 }
