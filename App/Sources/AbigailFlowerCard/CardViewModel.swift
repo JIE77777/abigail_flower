@@ -1,5 +1,7 @@
 import Foundation
 import SwiftUI
+import AppKit
+import Combine
 
 @MainActor
 final class CardViewModel: ObservableObject {
@@ -7,24 +9,38 @@ final class CardViewModel: ObservableObject {
     @Published private(set) var content: CardContent
     @Published private(set) var pages: [CountdownPage]
     @Published private(set) var selectedPageID: UUID?
+    @Published private(set) var overviewCards: [CountdownCardOverview]
+    @Published private(set) var isMergeTargetHighlighted = false
+
+    let cardID: UUID
 
     private let engine = CountdownEngine()
-    private let pagesStore = CountdownPagesStore()
+    private let workspaceController: WorkspaceController
+    private weak var windowRegistry: WindowRegistry?
     private var refreshTimer: Timer?
     private var lastDayStamp: String
+    private var cancellables = Set<AnyCancellable>()
 
-    init() {
+    init(cardID: UUID, workspaceController: WorkspaceController, windowRegistry: WindowRegistry) {
+        self.cardID = cardID
+        self.workspaceController = workspaceController
+        self.windowRegistry = windowRegistry
+
         let now = Date()
-        let loadedConfig = engine.loadConfig()
-        let document = pagesStore.load(config: loadedConfig, now: now)
-        let selected = CardViewModel.resolveSelectedPageID(from: document)
-        let page = CardViewModel.resolveCurrentPage(from: document.pages, selectedPageID: selected, fallbackConfig: loadedConfig, now: now)
+        let loadedConfig = workspaceController.config
+        let card = workspaceController.card(for: cardID)
+        let selectedPageID = card?.selectedPageID
+        let pages = card?.pages ?? []
+        let currentPage = workspaceController.currentPage(for: cardID, now: now)
 
         self.config = loadedConfig
-        self.pages = document.pages
-        self.selectedPageID = selected
-        self.content = engine.generateContent(config: loadedConfig, page: page, now: now)
+        self.pages = pages
+        self.selectedPageID = selectedPageID
+        self.content = engine.generateContent(config: loadedConfig, page: currentPage, now: now)
+        self.overviewCards = workspaceController.overviewCards(currentCardID: cardID, now: now)
         self.lastDayStamp = AppStateStore.dayStamp(from: now)
+
+        bind()
         scheduleRefreshTimer()
     }
 
@@ -32,41 +48,38 @@ final class CardViewModel: ObservableObject {
         CGSize(width: CGFloat(config.panelWidth), height: CGFloat(config.panelHeight))
     }
 
-    var panelPosition: CGPoint {
-        CGPoint(x: CGFloat(config.panelX), y: CGFloat(config.panelY))
-    }
-
     var currentPage: CountdownPage {
-        CardViewModel.resolveCurrentPage(from: pages, selectedPageID: selectedPageID, fallbackConfig: config, now: Date())
+        if let selectedPageID,
+           let page = pages.first(where: { $0.id == selectedPageID }) {
+            return page
+        }
+        if let first = pages.first {
+            return first
+        }
+        return workspaceController.currentPage(for: cardID)
     }
 
     var canDeleteCurrentPage: Bool {
         pages.count > 1
     }
 
+    var canDetachCurrentPage: Bool {
+        pages.count > 1
+    }
+
     func reroll() {
-        engine.reroll()
-        reload(forceConfig: false)
+        workspaceController.rerollToday()
     }
 
     func reload(forceConfig: Bool = true) {
-        let now = Date()
         if forceConfig {
-            config = engine.loadConfig()
+            workspaceController.reloadConfig()
         }
-
-        let document = pagesStore.load(config: config, now: now)
-        pages = document.pages
-        selectedPageID = CardViewModel.resolveSelectedPageID(from: document)
-        content = engine.generateContent(config: config, page: currentPage, now: now)
-        lastDayStamp = AppStateStore.dayStamp(from: now)
+        refreshFromWorkspace(now: Date())
     }
 
     func selectPage(id: UUID) {
-        guard pages.contains(where: { $0.id == id }) else { return }
-        selectedPageID = id
-        persistPages()
-        reload(forceConfig: false)
+        workspaceController.selectPage(cardID: cardID, pageID: id)
     }
 
     func selectNextPage() {
@@ -84,40 +97,94 @@ final class CardViewModel: ObservableObject {
     }
 
     func beginEditingCurrentPage() -> CountdownPageDraft {
-        pagesStore.draft(for: currentPage)
+        workspaceController.beginEditingCurrentPage(in: cardID)
     }
 
     func beginCreatingPage() -> CountdownPageDraft {
-        pagesStore.newDraft(relativeTo: currentPage, now: Date())
+        workspaceController.beginCreatingPage(in: cardID, now: Date())
     }
 
     func savePage(from draft: CountdownPageDraft) {
-        let page = pagesStore.normalizedPage(from: draft)
-        if let index = pages.firstIndex(where: { $0.id == page.id }) {
-            pages[index] = page
-        } else {
-            let insertionIndex = (pages.firstIndex(where: { $0.id == selectedPageID }) ?? (pages.count - 1)) + 1
-            pages.insert(page, at: max(0, min(insertionIndex, pages.count)))
-        }
-        selectedPageID = page.id
-        persistPages()
-        reload(forceConfig: false)
+        workspaceController.savePage(in: cardID, from: draft)
     }
 
     func deleteCurrentPage() {
-        guard canDeleteCurrentPage else { return }
-        let currentID = currentPage.id
-        guard let index = pages.firstIndex(where: { $0.id == currentID }) else { return }
-        pages.remove(at: index)
-        let fallbackIndex = min(index, max(0, pages.count - 1))
-        selectedPageID = pages[fallbackIndex].id
-        persistPages()
-        reload(forceConfig: false)
+        workspaceController.deleteCurrentPage(in: cardID)
     }
 
-    private func persistPages() {
-        let document = CountdownPagesDocument(selectedPageID: selectedPageID, pages: pages)
-        pagesStore.save(document)
+    func openCurrentPageInNewCard() {
+        guard canDetachCurrentPage else { return }
+        _ = windowRegistry?.detachPage(pageID: currentPage.id, from: cardID, dropPoint: NSEvent.mouseLocation)
+    }
+
+    func detachPage(_ pageID: UUID, dropPoint: CGPoint? = nil) {
+        _ = windowRegistry?.detachPage(pageID: pageID, from: cardID, dropPoint: dropPoint ?? NSEvent.mouseLocation)
+    }
+
+    func createStandaloneCard() {
+        _ = windowRegistry?.createStandaloneCard(relativeTo: cardID, near: NSEvent.mouseLocation)
+    }
+
+    func focusCard(_ targetCardID: UUID) {
+        windowRegistry?.focusCard(id: targetCardID)
+    }
+
+    func revealAllCards() {
+        windowRegistry?.revealAllCards()
+    }
+
+    func resetAllCardPositions() {
+        windowRegistry?.resetAllCardPositions()
+    }
+
+    func selectOverviewPage(cardID targetCardID: UUID, pageID: UUID) {
+        workspaceController.selectPage(cardID: targetCardID, pageID: pageID)
+        windowRegistry?.focusCard(id: targetCardID)
+    }
+
+    func detachOverviewPage(cardID targetCardID: UUID, pageID: UUID) {
+        _ = windowRegistry?.detachPage(pageID: pageID, from: targetCardID, dropPoint: NSEvent.mouseLocation)
+    }
+
+    private func bind() {
+        workspaceController.$workspace
+            .sink { [weak self] _ in
+                self?.refreshFromWorkspace(now: Date())
+            }
+            .store(in: &cancellables)
+
+        workspaceController.$config
+            .sink { [weak self] config in
+                guard let self else { return }
+                self.config = config
+                self.refreshFromWorkspace(now: Date())
+            }
+            .store(in: &cancellables)
+
+        workspaceController.$contentRevision
+            .dropFirst()
+            .sink { [weak self] _ in
+                self?.refreshFromWorkspace(now: Date())
+            }
+            .store(in: &cancellables)
+
+        if let windowRegistry {
+            windowRegistry.$mergeTargetCardID
+                .sink { [weak self] mergeTargetID in
+                    self?.isMergeTargetHighlighted = mergeTargetID == self?.cardID
+                }
+                .store(in: &cancellables)
+        }
+    }
+
+    private func refreshFromWorkspace(now: Date) {
+        config = workspaceController.config
+        let card = workspaceController.card(for: cardID)
+        pages = card?.pages ?? []
+        selectedPageID = card?.selectedPageID
+        overviewCards = workspaceController.overviewCards(currentCardID: cardID, now: now)
+        content = engine.generateContent(config: config, page: currentPage, now: now)
+        lastDayStamp = AppStateStore.dayStamp(from: now)
     }
 
     private func scheduleRefreshTimer() {
@@ -133,31 +200,11 @@ final class CardViewModel: ObservableObject {
     private func tick() {
         let dayStamp = AppStateStore.dayStamp(from: Date())
         if dayStamp != lastDayStamp {
-            reload(forceConfig: false)
+            refreshFromWorkspace(now: Date())
         }
     }
 
     deinit {
         refreshTimer?.invalidate()
-    }
-
-    private static func resolveSelectedPageID(from document: CountdownPagesDocument) -> UUID? {
-        if let selected = document.selectedPageID, document.pages.contains(where: { $0.id == selected }) {
-            return selected
-        }
-        return document.pages.first?.id
-    }
-
-    private static func resolveCurrentPage(from pages: [CountdownPage], selectedPageID: UUID?, fallbackConfig: CardConfig, now: Date) -> CountdownPage {
-        if let selectedPageID, let page = pages.first(where: { $0.id == selectedPageID }) {
-            return page
-        }
-        if let first = pages.first {
-            return first
-        }
-        return CountdownPagesStore().load(config: fallbackConfig, now: now).pages.first ?? CountdownPage(
-            title: fallbackConfig.titleLine,
-            targetDate: now
-        )
     }
 }

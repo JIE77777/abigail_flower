@@ -2,21 +2,30 @@ import SwiftUI
 import AppKit
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
-    private var windowController: CardWindowController?
-    private var viewModel: CardViewModel?
+    var workspaceController: WorkspaceController?
+    var windowRegistry: WindowRegistry?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
-        let model = CardViewModel()
-        self.viewModel = model
-        let controller = CardWindowController(viewModel: model)
-        self.windowController = controller
-        controller.showWindow(nil)
-        controller.window?.orderFrontRegardless()
+
+        let workspaceController = WorkspaceController()
+        let windowRegistry = WindowRegistry(workspaceController: workspaceController)
+
+        self.workspaceController = workspaceController
+        self.windowRegistry = windowRegistry
+
+        windowRegistry.start()
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         false
+    }
+
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        if !flag {
+            windowRegistry?.revealAllCards()
+        }
+        return true
     }
 }
 
@@ -26,8 +35,16 @@ struct AbigailFlowerCardApp: App {
 
     var body: some Scene {
         Settings {
-            EmptyView()
-                .frame(width: 0, height: 0)
+            if let workspaceController = appDelegate.workspaceController,
+               let windowRegistry = appDelegate.windowRegistry {
+                PreferencesView(
+                    workspaceController: workspaceController,
+                    windowRegistry: windowRegistry
+                )
+            } else {
+                ProgressView()
+                    .frame(width: 360, height: 220)
+            }
         }
     }
 }

@@ -123,6 +123,9 @@ struct EnvLoader {
                 value.removeFirst()
                 value.removeLast()
             }
+            value = value
+                .replacingOccurrences(of: "\\\"", with: "\"")
+                .replacingOccurrences(of: "\\\\", with: "\\")
             values[key] = value
         }
         return values
@@ -232,6 +235,57 @@ final class CountdownEngine {
         config.taglineCountMax = max(config.taglineCountMin, config.taglineCountMax)
         config.easterEggDailyChance = min(max(config.easterEggDailyChance, 0), 100)
         return config
+    }
+
+    func saveConfig(_ config: CardConfig) {
+        SupportBootstrap.ensureSupportFiles()
+
+        let lines = [
+            "# 阿比盖尔之花原生卡片配置",
+            "",
+            "TITLE_LINE=\"\(escaped(config.titleLine))\"",
+            "TARGET_MONTH=\"\(config.targetMonth)\"",
+            "TARGET_DAY=\"\(config.targetDay)\"",
+            "",
+            "# 推荐 daily_random。",
+            "TAGLINE_MODE=\"\(escaped(config.taglineMode))\"",
+            "TAGLINE=\"\(escaped(config.fallbackTagline))\"",
+            "TAGLINE_COUNT_MIN=\"\(config.taglineCountMin)\"",
+            "TAGLINE_COUNT_MAX=\"\(config.taglineCountMax)\"",
+            "",
+            "# 副标题权重",
+            "TAGLINE_WEIGHT_BRIGHT=\"\(config.taglineWeights["bright"] ?? 0)\"",
+            "TAGLINE_WEIGHT_REMINDERS=\"\(config.taglineWeights["reminders"] ?? 0)\"",
+            "TAGLINE_WEIGHT_PLAYFUL=\"\(config.taglineWeights["playful"] ?? 0)\"",
+            "TAGLINE_WEIGHT_WENDY=\"\(config.taglineWeights["wendy"] ?? 0)\"",
+            "TAGLINE_WEIGHT_COOKIE=\"\(config.taglineWeights["cookie"] ?? 0)\"",
+            "",
+            "# 彩蛋",
+            "EASTER_EGGS_ENABLED=\"\(config.easterEggsEnabled ? "1" : "0")\"",
+            "EASTER_EGG_DAILY_CHANCE=\"\(config.easterEggDailyChance)\"",
+            "EASTER_WEIGHT_ALWAYS=\"\(config.easterWeights["always"] ?? 0)\"",
+            "EASTER_WEIGHT_THURSDAY=\"\(config.easterWeights["thursday"] ?? 0)\"",
+            "EASTER_WEIGHT_WEEKEND=\"\(config.easterWeights["weekend"] ?? 0)\"",
+            "EASTER_WEIGHT_AUGUST=\"\(config.easterWeights["august"] ?? 0)\"",
+            "EASTER_WEIGHT_FINAL30=\"\(config.easterWeights["final30"] ?? 0)\"",
+            "EASTER_WEIGHT_FINAL10=\"\(config.easterWeights["final10"] ?? 0)\"",
+            "EASTER_WEIGHT_MILESTONES=\"\(config.easterWeights["milestones"] ?? 0)\"",
+            "EASTER_WEIGHT_COOKIE=\"\(config.easterWeights["cookie"] ?? 0)\"",
+            "",
+            "# 卡片尺寸与位置",
+            "PANEL_X=\"\(formatted(config.panelX))\"",
+            "PANEL_Y=\"\(formatted(config.panelY))\"",
+            "PANEL_WIDTH=\"\(formatted(config.panelWidth))\"",
+            "PANEL_HEIGHT=\"\(formatted(config.panelHeight))\"",
+            "",
+            "# 显示风格",
+            "SHOW_ENGLISH_FIRST=\"\(config.showEnglishFirst ? "1" : "0")\"",
+            "CARD_OPACITY=\"\(formatted(config.cardOpacity))\"",
+            "",
+        ]
+
+        let text = lines.joined(separator: "\n")
+        try? text.write(to: AbigailPaths.configFile, atomically: true, encoding: .utf8)
     }
 
     func generateContent(config: CardConfig, page: CountdownPage, now: Date = Date()) -> CardContent {
@@ -400,5 +454,18 @@ final class CountdownEngine {
         default:
             return false
         }
+    }
+
+    private func escaped(_ value: String) -> String {
+        value
+            .replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "\"", with: "\\\"")
+    }
+
+    private func formatted(_ value: Double) -> String {
+        if value.rounded() == value {
+            return String(Int(value))
+        }
+        return String(format: "%.2f", value)
     }
 }

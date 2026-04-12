@@ -23,6 +23,7 @@ const defaultPreviewConfig = {
     milestones: 6,
     cookie: 3,
   },
+  cardOpacity: 0.97,
 };
 
 const fallbackData = {
@@ -46,6 +47,7 @@ const pagesStorageKey = 'abigail-flower-preview-pages';
 const selectedPageStorageKey = 'abigail-flower-preview-selected-page';
 const cardOffsetStorageKey = 'abigail-flower-preview-card-offset';
 const detachedCardsStorageKey = 'abigail-flower-preview-detached-cards';
+const previewOpacityStorageKey = 'abigail-flower-preview-card-opacity';
 
 const sourceManifest = {
   taglines: ['bright', 'cookie', 'playful', 'reminders', 'wendy'],
@@ -66,6 +68,7 @@ const previewState = {
   editor: null,
   overviewOpen: false,
   cardOffset: { x: 0, y: 0 },
+  previewOpacity: defaultPreviewConfig.cardOpacity,
 };
 
 const stageNode = document.querySelector('.stage');
@@ -87,12 +90,12 @@ const simDateInput = document.getElementById('sim-date');
 const jumpTodayButton = document.getElementById('jump-today');
 const shiftButtons = Array.from(document.querySelectorAll('[data-shift-days]'));
 const jumpButtons = Array.from(document.querySelectorAll('[data-jump]'));
-const taglineCountNode = document.getElementById('tagline-count');
-const eggCountNode = document.getElementById('egg-count');
-const toneLabelNode = document.getElementById('tone-label');
 const simDateLabelNode = document.getElementById('sim-date-label');
-const simTargetLabelNode = document.getElementById('sim-target-label');
 const sourceStatusNode = document.getElementById('source-status');
+const previewOpacityInput = document.getElementById('preview-opacity');
+const previewOpacityValueNode = document.getElementById('preview-opacity-value');
+const previewRevealAllButton = document.getElementById('preview-reveal-all');
+const previewResetLayoutButton = document.getElementById('preview-reset-layout');
 
 const pageEditorNode = document.getElementById('page-editor');
 const pageEditorScrim = document.getElementById('page-editor-scrim');
@@ -120,10 +123,6 @@ function cloneDataMap(map) {
   return Object.fromEntries(
     Object.entries(map).map(([name, entries]) => [name, entries.map((lines) => [...lines])]),
   );
-}
-
-function sumEntries(map) {
-  return Object.values(map).reduce((sum, entries) => sum + entries.length, 0);
 }
 
 function clamp(value, min, max) {
@@ -238,10 +237,35 @@ function saveCardOffset() {
   localStorage.setItem(cardOffsetStorageKey, JSON.stringify(previewState.cardOffset));
 }
 
+function loadPreviewOpacity() {
+  const stored = localStorage.getItem(previewOpacityStorageKey);
+  const parsed = stored ? Number.parseFloat(stored) : NaN;
+  return Number.isFinite(parsed) ? clamp(parsed, 0.82, 1.0) : null;
+}
+
+function savePreviewOpacity() {
+  localStorage.setItem(previewOpacityStorageKey, String(previewState.previewOpacity));
+}
+
 function applyCardOffset() {
   if (!cardShellNode) return;
   cardShellNode.style.setProperty('--preview-card-offset-x', `${previewState.cardOffset.x}px`);
   cardShellNode.style.setProperty('--preview-card-offset-y', `${previewState.cardOffset.y}px`);
+}
+
+function syncPreviewOpacityControls() {
+  if (previewOpacityInput) {
+    previewOpacityInput.value = String(Math.round(previewState.previewOpacity * 100));
+  }
+  if (previewOpacityValueNode) {
+    previewOpacityValueNode.textContent = `${Math.round(previewState.previewOpacity * 100)}%`;
+  }
+}
+
+function applyPreviewOpacity() {
+  if (cardNode) {
+    cardNode.style.setProperty('--preview-card-opacity', String(previewState.previewOpacity));
+  }
 }
 
 function canStartCardDrag(target) {
@@ -404,19 +428,6 @@ function currentTargetDate() {
 
 function daysRemaining(today, target) {
   return Math.round((target.getTime() - today.getTime()) / 86400000);
-}
-
-function toneLabel(tone) {
-  switch (tone) {
-    case 'today':
-      return '主题：当天';
-    case 'final':
-      return '主题：最后 10 天';
-    case 'milestone':
-      return '主题：里程碑';
-    default:
-      return '主题：常规日';
-  }
 }
 
 function fnv1a32(input) {
@@ -658,6 +669,70 @@ function stageRelativeOffset(clientX, clientY) {
     x: clamp(clientX - rect.left - (width * 0.35), margin, Math.max(margin, rect.width - width - margin)),
     y: clamp(clientY - rect.top - (height * 0.18), margin, Math.max(margin, rect.height - height - margin)),
   };
+}
+
+function visibleStageBounds(width = 400, height = 322) {
+  if (!stageNode) {
+    return {
+      minX: 18,
+      maxX: 18,
+      minY: 18,
+      maxY: 18,
+    };
+  }
+
+  const rect = stageNode.getBoundingClientRect();
+  const margin = 18;
+  return {
+    minX: margin,
+    maxX: Math.max(margin, rect.width - width - margin),
+    minY: margin,
+    maxY: Math.max(margin, rect.height - height - margin),
+  };
+}
+
+function normalizedDetachedOffset(index, existingOffset) {
+  const bounds = visibleStageBounds();
+  const baseX = Math.max(bounds.minX, bounds.maxX - 26);
+  const baseY = bounds.minY + 22 + (index * 26);
+  const fallback = {
+    x: clamp(baseX, bounds.minX, bounds.maxX),
+    y: clamp(baseY, bounds.minY, bounds.maxY),
+  };
+
+  if (!existingOffset) return fallback;
+  return {
+    x: clamp(existingOffset.x, bounds.minX, bounds.maxX),
+    y: clamp(existingOffset.y, bounds.minY, bounds.maxY),
+  };
+}
+
+function revealAllPreviewCards() {
+  const bounds = visibleStageBounds();
+  previewState.cardOffset = {
+    x: clamp(previewState.cardOffset.x, bounds.minX, bounds.maxX),
+    y: clamp(previewState.cardOffset.y, bounds.minY, bounds.maxY),
+  };
+  previewState.detachedCards = previewState.detachedCards.map((detached, index) => ({
+    ...detached,
+    offset: normalizedDetachedOffset(index, detached.offset),
+  }));
+  saveCardOffset();
+  saveDetachedCards();
+  applyCardOffset();
+  renderDetachedCards();
+}
+
+function resetPreviewLayout() {
+  previewState.cardOffset = { x: 0, y: 0 };
+  previewState.detachedCards = previewState.detachedCards.map((detached, index) => ({
+    ...detached,
+    offset: normalizedDetachedOffset(index),
+  }));
+  saveCardOffset();
+  saveDetachedCards();
+  applyCardOffset();
+  renderDetachedCards();
 }
 
 function focusDetachedCard(detachedID) {
@@ -912,6 +987,7 @@ async function fetchText(url) {
 }
 
 function applyEnvConfig(env) {
+  const previousOpacity = previewState.previewOpacity;
   previewState.config = {
     ...deepClone(defaultPreviewConfig),
     titleLine: env.TITLE_LINE || defaultPreviewConfig.titleLine,
@@ -921,6 +997,7 @@ function applyEnvConfig(env) {
     taglineCountMax: toInt(env.TAGLINE_COUNT_MAX, defaultPreviewConfig.taglineCountMax),
     easterEggDailyChance: toInt(env.EASTER_EGG_DAILY_CHANCE, defaultPreviewConfig.easterEggDailyChance),
     showEnglishFirst: (env.SHOW_ENGLISH_FIRST ?? '1') !== '0',
+    cardOpacity: Number.parseFloat(env.CARD_OPACITY ?? '') || defaultPreviewConfig.cardOpacity,
     taglineWeights: { ...defaultPreviewConfig.taglineWeights },
     easterWeights: { ...defaultPreviewConfig.easterWeights },
   };
@@ -934,6 +1011,9 @@ function applyEnvConfig(env) {
     const envKey = `EASTER_WEIGHT_${key.toUpperCase()}`;
     previewState.config.easterWeights[key] = toInt(env[envKey], previewState.config.easterWeights[key]);
   });
+
+  const storedOpacity = loadPreviewOpacity();
+  previewState.previewOpacity = storedOpacity ?? previousOpacity ?? previewState.config.cardOpacity;
 }
 
 async function loadSourceFiles() {
@@ -971,17 +1051,11 @@ function saveSimulatedDate(date) {
   localStorage.setItem(simulatedDateStorageKey, formatInputDate(date));
 }
 
-function updateMetaCounters() {
-  taglineCountNode.textContent = `${sumEntries(previewState.taglines)} 条副标题`;
-  eggCountNode.textContent = `${sumEntries(previewState.easterEggs)} 条小彩蛋`;
-}
-
 function syncJumpButtons(today, target) {
   const quickTargets = {
     target,
     minus30: addDays(target, -30),
     minus10: addDays(target, -10),
-    'month-start': new Date(target.getFullYear(), target.getMonth(), 1),
   };
 
   jumpButtons.forEach((button) => {
@@ -1002,9 +1076,9 @@ function renderCard() {
   currentBadgeDateNode.textContent = snapshot.badgeParts.date;
   currentBadgeWeekdayNode.textContent = snapshot.badgeParts.weekday;
   simDateInput.value = formatInputDate(today);
-  simDateLabelNode.textContent = `模拟日期：${formatFullDateLabel(today)}`;
-  simTargetLabelNode.textContent = `当前倒计时：${page.title} · ${formatTargetLabel(snapshot.target)}`;
-  toneLabelNode.textContent = toneLabel(snapshot.tone);
+  if (simDateLabelNode) {
+    simDateLabelNode.textContent = `模拟日期：${formatFullDateLabel(today)}`;
+  }
 
   syncJumpButtons(today, snapshot.target);
   renderCountdown(snapshot.remainingDaysCount, page.title);
@@ -1033,6 +1107,7 @@ function renderDetachedCards() {
     card.classList.add('preview-card--detached');
     card.querySelectorAll('[id]').forEach((node) => node.removeAttribute('id'));
     card.dataset.detachedId = detached.id;
+    card.style.setProperty('--preview-card-opacity', String(previewState.previewOpacity));
 
     const snapshot = buildSnapshotForPage(detached.page, today);
     card.dataset.tone = snapshot.tone;
@@ -1145,9 +1220,6 @@ function jumpToPreset(kind) {
     case 'minus10':
       saveSimulatedDate(addDays(target, -10));
       break;
-    case 'month-start':
-      saveSimulatedDate(new Date(target.getFullYear(), target.getMonth(), 1));
-      break;
     default:
       return;
   }
@@ -1244,6 +1316,24 @@ function bindInteractions() {
     const today = loadSimulatedDate();
     saveRerollSeed(today);
     renderCard();
+  });
+
+  previewOpacityInput?.addEventListener('input', (event) => {
+    const target = event.currentTarget;
+    if (!(target instanceof HTMLInputElement)) return;
+    previewState.previewOpacity = clamp(Number(target.value) / 100, 0.82, 1.0);
+    savePreviewOpacity();
+    syncPreviewOpacityControls();
+    applyPreviewOpacity();
+    renderDetachedCards();
+  });
+
+  previewRevealAllButton?.addEventListener('click', () => {
+    revealAllPreviewCards();
+  });
+
+  previewResetLayoutButton?.addEventListener('click', () => {
+    resetPreviewLayout();
   });
 
   currentBadgeButton.addEventListener('dblclick', () => {
@@ -1466,21 +1556,28 @@ async function init() {
   initializePages();
   previewState.detachedCards = loadDetachedCards();
   previewState.cardOffset = loadCardOffset();
+  previewState.previewOpacity = loadPreviewOpacity() ?? previewState.previewOpacity;
   applyCardOffset();
+  applyPreviewOpacity();
+  syncPreviewOpacityControls();
   bindInteractions();
-  updateMetaCounters();
   renderCard();
 
   try {
     await loadSourceFiles();
-    updateMetaCounters();
     if (!localStorage.getItem(pagesStorageKey)) {
       initializePages();
     }
-    sourceStatusNode.textContent = '已读取仓库中的真实文案库和权重。点页迹可切页，拖页迹可抽出单卡，左右轻划可翻页，长按或右键页迹可打开倒计时总览；按住卡片空白区可拖动。左侧是预览控制，不属于 app 卡片本体。';
+    applyPreviewOpacity();
+    syncPreviewOpacityControls();
+    if (sourceStatusNode) {
+      sourceStatusNode.textContent = '已读取仓库中的真实文案库和权重。左侧也同步映射了原生偏好里的透明度和整理动作，避免预览和 app 脱节。';
+    }
   } catch (error) {
     console.error(error);
-    sourceStatusNode.textContent = '未能读取仓库源文件。请在仓库根目录运行 python3 -m http.server 8000 后再打开预览。';
+    if (sourceStatusNode) {
+      sourceStatusNode.textContent = '未能读取仓库源文件。请在仓库根目录运行 python3 -m http.server 8000 后再打开预览。';
+    }
   }
 
   renderCard();

@@ -2,15 +2,39 @@ import SwiftUI
 import AppKit
 
 final class AbigailPanel: NSPanel {
+    var onPrimaryMouseDown: (() -> Void)?
+    var onPrimaryMouseUp: (() -> Void)?
+
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { false }
+
+    override func sendEvent(_ event: NSEvent) {
+        switch event.type {
+        case .leftMouseDown:
+            onPrimaryMouseDown?()
+        case .leftMouseUp:
+            onPrimaryMouseUp?()
+        default:
+            break
+        }
+        super.sendEvent(event)
+    }
 }
 
-final class CardWindowController: NSWindowController {
-    init(viewModel: CardViewModel) {
-        let size = viewModel.panelSize
+@MainActor
+final class CardWindowController: NSWindowController, NSWindowDelegate {
+    let cardID: UUID
+
+    var onFrameDidChange: ((CGRect) -> Void)?
+    var onPotentialDragStart: (() -> Void)?
+    var onPotentialDragEnd: (() -> Void)?
+    var onWindowFocused: (() -> Void)?
+
+    init(cardID: UUID, viewModel: CardViewModel, initialFrame: CGRect) {
+        self.cardID = cardID
+
         let panel = AbigailPanel(
-            contentRect: NSRect(x: 0, y: 0, width: size.width, height: size.height),
+            contentRect: initialFrame,
             styleMask: [.borderless, .nonactivatingPanel, .fullSizeContentView],
             backing: .buffered,
             defer: false
@@ -31,7 +55,7 @@ final class CardWindowController: NSWindowController {
         panel.standardWindowButton(.closeButton)?.isHidden = true
         panel.standardWindowButton(.miniaturizeButton)?.isHidden = true
         panel.standardWindowButton(.zoomButton)?.isHidden = true
-        panel.setFrameAutosaveName("AbigailFlowerPanel")
+        panel.delegate = self
 
         let hosting = NSHostingView(rootView: CardView(viewModel: viewModel))
         hosting.translatesAutoresizingMaskIntoConstraints = false
@@ -47,8 +71,14 @@ final class CardWindowController: NSWindowController {
         ])
 
         super.init(window: panel)
-        if !panel.setFrameUsingName("AbigailFlowerPanel") {
-            position(panel: panel, using: viewModel)
+
+        panel.onPrimaryMouseDown = { [weak self, weak panel] in
+            panel?.makeKeyAndOrderFront(nil)
+            self?.onWindowFocused?()
+            self?.onPotentialDragStart?()
+        }
+        panel.onPrimaryMouseUp = { [weak self] in
+            self?.onPotentialDragEnd?()
         }
     }
 
@@ -57,11 +87,20 @@ final class CardWindowController: NSWindowController {
         nil
     }
 
-    private func position(panel: NSPanel, using viewModel: CardViewModel) {
-        if let screen = NSScreen.main {
-            let position = viewModel.panelPosition
-            let y = screen.visibleFrame.maxY - position.y - viewModel.panelSize.height
-            panel.setFrameOrigin(NSPoint(x: position.x, y: y))
-        }
+    func currentFrame() -> CGRect? {
+        window?.frame
+    }
+
+    func applyFrame(_ frame: CGRect, animate: Bool = false) {
+        window?.setFrame(frame, display: true, animate: animate)
+    }
+
+    func windowDidMove(_ notification: Notification) {
+        guard let frame = window?.frame else { return }
+        onFrameDidChange?(frame)
+    }
+
+    func windowDidBecomeKey(_ notification: Notification) {
+        onWindowFocused?()
     }
 }

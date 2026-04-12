@@ -14,22 +14,17 @@
       <section class="stage">
         <aside class="stage__note">
           <p class="stage__eyebrow">预览控制</p>
-          <h1>阿比盖尔之花</h1>
+          <h1>网页预览</h1>
           <p class="stage__copy">
-            这里是网页预览的控制台，不属于 app 本体。它会直接读取仓库里的真实文案库和权重，
-            用来模拟当前日期、切换倒计时页，并验证卡片的交互和层级。
+            这里只保留帮助我们校验原生卡片的控制项。真正的产品界面仍然以 macOS app 本体为准，
+            左侧只负责模拟日期和提示当前预览状态。
           </p>
-          <div class="stage__meta">
-            <span id="tagline-count">副标题读取中</span>
-            <span id="egg-count">彩蛋读取中</span>
-            <span id="tone-label">主题读取中</span>
-          </div>
 
           <section class="preview-controls" aria-label="预览控制台">
             <div class="preview-controls__head">
               <div>
-                <p class="preview-controls__eyebrow">预览时间</p>
-                <h2>控制当前预览</h2>
+                <p class="preview-controls__eyebrow">日期模拟</p>
+                <h2>切换当前预览日期</h2>
               </div>
               <button class="preview-controls__today" id="jump-today" type="button">回到今天</button>
             </div>
@@ -50,15 +45,30 @@
               <button class="preview-chip-button" type="button" data-jump="target">目标当天</button>
               <button class="preview-chip-button" type="button" data-jump="minus30">前 30 天</button>
               <button class="preview-chip-button" type="button" data-jump="minus10">前 10 天</button>
-              <button class="preview-chip-button" type="button" data-jump="month-start">目标月月初</button>
             </div>
 
             <div class="preview-controls__summary">
               <p id="sim-date-label">模拟日期：2026.03.24 周二</p>
-              <p id="sim-target-label">当前倒计时：距离 8.31 · 2026.08.31</p>
             </div>
 
             <p class="preview-controls__status" id="source-status">正在读取仓库中的真实文案库…</p>
+
+            <div class="preview-controls__pref">
+              <div class="preview-controls__pref-head">
+                <p class="preview-controls__eyebrow">偏好映射</p>
+                <span id="preview-opacity-value">97%</span>
+              </div>
+
+              <label class="preview-controls__range" for="preview-opacity">
+                <span>卡片透明度</span>
+                <input id="preview-opacity" type="range" min="82" max="100" step="1" value="97" />
+              </label>
+
+              <div class="preview-controls__actions">
+                <button class="preview-chip-button" id="preview-reveal-all" type="button">找回卡片</button>
+                <button class="preview-chip-button" id="preview-reset-layout" type="button">重置位置</button>
+              </div>
+            </div>
           </section>
         </aside>
 

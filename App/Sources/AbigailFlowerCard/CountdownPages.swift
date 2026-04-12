@@ -1,4 +1,5 @@
 import Foundation
+import CoreGraphics
 
 struct CountdownPage: Identifiable, Codable, Hashable {
     var id: UUID
@@ -12,7 +13,48 @@ struct CountdownPage: Identifiable, Codable, Hashable {
     }
 }
 
-struct CountdownPagesDocument: Codable {
+struct SavedCardFrame: Codable, Hashable {
+    var x: Double
+    var y: Double
+    var width: Double
+    var height: Double
+
+    init(x: Double, y: Double, width: Double, height: Double) {
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+    }
+
+    init(rect: CGRect) {
+        self.init(x: rect.origin.x, y: rect.origin.y, width: rect.width, height: rect.height)
+    }
+
+    var rect: CGRect {
+        CGRect(x: x, y: y, width: width, height: height)
+    }
+}
+
+struct CountdownCardDocument: Identifiable, Codable, Hashable {
+    var id: UUID
+    var pages: [CountdownPage]
+    var selectedPageID: UUID?
+    var frame: SavedCardFrame?
+
+    init(id: UUID = UUID(), pages: [CountdownPage], selectedPageID: UUID? = nil, frame: SavedCardFrame? = nil) {
+        self.id = id
+        self.pages = pages
+        self.selectedPageID = selectedPageID
+        self.frame = frame
+    }
+}
+
+struct CountdownWorkspaceDocument: Codable, Hashable {
+    var focusedCardID: UUID?
+    var cards: [CountdownCardDocument]
+}
+
+private struct LegacyCountdownPagesDocument: Codable {
     var selectedPageID: UUID?
     var pages: [CountdownPage]
 }
@@ -24,11 +66,32 @@ struct CountdownPageDraft {
     var isNew: Bool
 }
 
-extension AbigailPaths {
-    static let pagesFile = supportDirectory.appendingPathComponent("countdown_pages.json")
+struct CountdownOverviewPage: Identifiable, Hashable {
+    var id: UUID
+    var title: String
+    var targetDate: Date
+    var daysRemaining: Int
+    var isSelected: Bool
 }
 
-final class CountdownPagesStore {
+struct CountdownCardOverview: Identifiable, Hashable {
+    var id: UUID
+    var title: String
+    var targetDate: Date
+    var daysRemaining: Int
+    var pageCount: Int
+    var isFocused: Bool
+    var isCurrentWindow: Bool
+    var pages: [CountdownOverviewPage]
+}
+
+extension AbigailPaths {
+    static let workspaceFile = supportDirectory.appendingPathComponent("countdown_workspace.json")
+    static let legacyPagesFile = supportDirectory.appendingPathComponent("countdown_pages.json")
+    static let legacyPagesArchiveFile = supportDirectory.appendingPathComponent("countdown_pages.legacy.json")
+}
+
+final class CountdownWorkspaceStore {
     private let calendar = Calendar(identifier: .gregorian)
     private let encoder: JSONEncoder = {
         let encoder = JSONEncoder()
@@ -42,26 +105,33 @@ final class CountdownPagesStore {
         return decoder
     }()
 
-    func load(config: CardConfig, now: Date = Date()) -> CountdownPagesDocument {
+    func load(config: CardConfig, now: Date = Date()) -> CountdownWorkspaceDocument {
         SupportBootstrap.ensureSupportFiles()
-        guard
-            let data = try? Data(contentsOf: AbigailPaths.pagesFile),
-            let decoded = try? decoder.decode(CountdownPagesDocument.self, from: data)
-        else {
-            let fallback = defaultDocument(config: config, now: now)
-            save(fallback)
-            return fallback
+
+        if let data = try? Data(contentsOf: AbigailPaths.workspaceFile),
+           let decoded = try? decoder.decode(CountdownWorkspaceDocument.self, from: data) {
+            let sanitized = normalized(decoded, config: config, now: now)
+            save(sanitized)
+            return sanitized
         }
 
-        let sanitized = sanitize(decoded, config: config, now: now)
-        save(sanitized)
-        return sanitized
+        if let legacyData = try? Data(contentsOf: AbigailPaths.legacyPagesFile),
+           let legacy = try? decoder.decode(LegacyCountdownPagesDocument.self, from: legacyData) {
+            let migrated = normalized(migrate(legacy: legacy, config: config, now: now), config: config, now: now)
+            save(migrated)
+            archiveLegacyFileIfNeeded()
+            return migrated
+        }
+
+        let fallback = defaultWorkspace(config: config, now: now)
+        save(fallback)
+        return fallback
     }
 
-    func save(_ document: CountdownPagesDocument) {
+    func save(_ workspace: CountdownWorkspaceDocument) {
         SupportBootstrap.ensureSupportFiles()
-        guard let data = try? encoder.encode(document) else { return }
-        try? data.write(to: AbigailPaths.pagesFile, options: [.atomic])
+        guard let data = try? encoder.encode(workspace) else { return }
+        try? data.write(to: AbigailPaths.workspaceFile, options: [.atomic])
     }
 
     func draft(for page: CountdownPage) -> CountdownPageDraft {
@@ -92,32 +162,76 @@ final class CountdownPagesStore {
         )
     }
 
-    private func defaultDocument(config: CardConfig, now: Date) -> CountdownPagesDocument {
+    func normalized(_ workspace: CountdownWorkspaceDocument, config: CardConfig, now: Date) -> CountdownWorkspaceDocument {
+        var seenCardIDs = Set<UUID>()
+        let sanitizedCards = workspace.cards.compactMap { rawCard -> CountdownCardDocument? in
+            guard seenCardIDs.insert(rawCard.id).inserted else { return nil }
+
+            let pages = rawCard.pages.map { page in
+                CountdownPage(
+                    id: page.id,
+                    title: normalizedTitle(page.title),
+                    targetDate: normalize(page.targetDate)
+                )
+            }
+
+            guard !pages.isEmpty else { return nil }
+
+            let selectedPageID = pages.contains(where: { $0.id == rawCard.selectedPageID })
+                ? rawCard.selectedPageID
+                : pages.first?.id
+
+            return CountdownCardDocument(
+                id: rawCard.id,
+                pages: pages,
+                selectedPageID: selectedPageID,
+                frame: rawCard.frame
+            )
+        }
+
+        let cards = sanitizedCards.isEmpty ? [defaultCard(config: config, now: now)] : sanitizedCards
+        let focusedCardID = cards.contains(where: { $0.id == workspace.focusedCardID })
+            ? workspace.focusedCardID
+            : cards.first?.id
+
+        return CountdownWorkspaceDocument(focusedCardID: focusedCardID, cards: cards)
+    }
+
+    func defaultCard(config: CardConfig, now: Date, frame: SavedCardFrame? = nil) -> CountdownCardDocument {
         let page = CountdownPage(
             title: normalizedTitle(config.titleLine),
             targetDate: nextDefaultTargetDate(config: config, now: now)
         )
-        return CountdownPagesDocument(selectedPageID: page.id, pages: [page])
+        return CountdownCardDocument(pages: [page], selectedPageID: page.id, frame: frame)
     }
 
-    private func sanitize(_ document: CountdownPagesDocument, config: CardConfig, now: Date) -> CountdownPagesDocument {
-        var pages = document.pages.map { page in
-            CountdownPage(
-                id: page.id,
-                title: normalizedTitle(page.title),
-                targetDate: normalize(page.targetDate)
-            )
+    private func defaultWorkspace(config: CardConfig, now: Date) -> CountdownWorkspaceDocument {
+        let card = defaultCard(config: config, now: now)
+        return CountdownWorkspaceDocument(focusedCardID: card.id, cards: [card])
+    }
+
+    private func migrate(legacy: LegacyCountdownPagesDocument, config: CardConfig, now: Date) -> CountdownWorkspaceDocument {
+        let pages = legacy.pages.map { page in
+            CountdownPage(id: page.id, title: normalizedTitle(page.title), targetDate: normalize(page.targetDate))
+        }
+        let card = CountdownCardDocument(
+            pages: pages.isEmpty ? [defaultCard(config: config, now: now).pages[0]] : pages,
+            selectedPageID: pages.contains(where: { $0.id == legacy.selectedPageID }) ? legacy.selectedPageID : pages.first?.id,
+            frame: nil
+        )
+        return CountdownWorkspaceDocument(focusedCardID: card.id, cards: [card])
+    }
+
+    private func archiveLegacyFileIfNeeded() {
+        let fm = FileManager.default
+        guard fm.fileExists(atPath: AbigailPaths.legacyPagesFile.path) else { return }
+
+        if fm.fileExists(atPath: AbigailPaths.legacyPagesArchiveFile.path) {
+            try? fm.removeItem(at: AbigailPaths.legacyPagesFile)
+            return
         }
 
-        if pages.isEmpty {
-            return defaultDocument(config: config, now: now)
-        }
-
-        let selected = pages.contains(where: { $0.id == document.selectedPageID })
-            ? document.selectedPageID
-            : pages.first?.id
-
-        return CountdownPagesDocument(selectedPageID: selected, pages: pages)
+        try? fm.moveItem(at: AbigailPaths.legacyPagesFile, to: AbigailPaths.legacyPagesArchiveFile)
     }
 
     private func normalize(_ date: Date) -> Date {
