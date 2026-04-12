@@ -55,7 +55,6 @@ final class CardWindowController: NSWindowController, NSWindowDelegate {
         panel.standardWindowButton(.closeButton)?.isHidden = true
         panel.standardWindowButton(.miniaturizeButton)?.isHidden = true
         panel.standardWindowButton(.zoomButton)?.isHidden = true
-        panel.delegate = self
 
         let hosting = NSHostingView(rootView: CardView(viewModel: viewModel))
         hosting.translatesAutoresizingMaskIntoConstraints = false
@@ -71,6 +70,7 @@ final class CardWindowController: NSWindowController, NSWindowDelegate {
         ])
 
         super.init(window: panel)
+        panel.delegate = self
 
         panel.onPrimaryMouseDown = { [weak self, weak panel] in
             panel?.makeKeyAndOrderFront(nil)
