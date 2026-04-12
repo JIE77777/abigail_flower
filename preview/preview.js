@@ -93,6 +93,7 @@ const pageEditorTitle = document.getElementById('page-editor-title');
 const pageEditorClose = document.getElementById('page-editor-close');
 const pageTitleInput = document.getElementById('page-title-input');
 const pageDateInput = document.getElementById('page-date-input');
+const pageNewButton = document.getElementById('page-new-button');
 const pageDeleteButton = document.getElementById('page-delete-button');
 const pageCancelButton = document.getElementById('page-cancel-button');
 
@@ -483,6 +484,9 @@ function renderEggFooter(entry) {
 function renderPageSwitcher() {
   const activePage = currentPage();
   const activeIndex = Math.max(0, previewState.pages.findIndex((page) => page.id === activePage.id));
+  const pageCount = Math.max(previewState.pages.length, 1);
+  const start = pageCount <= 5 ? 0 : Math.max(0, Math.min(activeIndex - 1, pageCount - 5));
+  const visibleIndices = Array.from({ length: Math.min(pageCount, 5) }, (_, offset) => start + offset);
   pageSwitcherNode.innerHTML = '';
 
   const prevButton = document.createElement('button');
@@ -490,6 +494,7 @@ function renderPageSwitcher() {
   prevButton.type = 'button';
   prevButton.title = '上一页';
   prevButton.textContent = '‹';
+  prevButton.disabled = pageCount <= 1;
   prevButton.addEventListener('click', () => {
     const nextIndex = (activeIndex - 1 + previewState.pages.length) % previewState.pages.length;
     previewState.selectedPageID = previewState.pages[nextIndex].id;
@@ -498,16 +503,28 @@ function renderPageSwitcher() {
   });
   pageSwitcherNode.appendChild(prevButton);
 
-  const countNode = document.createElement('span');
-  countNode.className = 'page-switcher__count';
-  countNode.textContent = `${activeIndex + 1} / ${Math.max(previewState.pages.length, 1)}`;
-  pageSwitcherNode.appendChild(countNode);
+  const dotsNode = document.createElement('div');
+  dotsNode.className = 'page-switcher__dots';
+  visibleIndices.forEach((index) => {
+    const dot = document.createElement('button');
+    dot.className = `page-switcher__dot${index === activeIndex ? ' is-active' : ''}`;
+    dot.type = 'button';
+    dot.title = previewState.pages[index].title;
+    dot.addEventListener('click', () => {
+      previewState.selectedPageID = previewState.pages[index].id;
+      savePages();
+      renderCard();
+    });
+    dotsNode.appendChild(dot);
+  });
+  pageSwitcherNode.appendChild(dotsNode);
 
   const nextButton = document.createElement('button');
   nextButton.className = 'page-switcher__nav';
   nextButton.type = 'button';
   nextButton.title = '下一页';
   nextButton.textContent = '›';
+  nextButton.disabled = pageCount <= 1;
   nextButton.addEventListener('click', () => {
     const nextIndex = (activeIndex + 1) % previewState.pages.length;
     previewState.selectedPageID = previewState.pages[nextIndex].id;
@@ -515,19 +532,6 @@ function renderPageSwitcher() {
     renderCard();
   });
   pageSwitcherNode.appendChild(nextButton);
-
-  const divider = document.createElement('span');
-  divider.className = 'page-switcher__divider';
-  divider.setAttribute('aria-hidden', 'true');
-  pageSwitcherNode.appendChild(divider);
-
-  const addButton = document.createElement('button');
-  addButton.className = 'page-switcher__add';
-  addButton.type = 'button';
-  addButton.title = '新建日期页';
-  addButton.textContent = '+';
-  addButton.addEventListener('click', () => openEditor(true));
-  pageSwitcherNode.appendChild(addButton);
 }
 
 function parseEnvText(text) {
@@ -731,6 +735,7 @@ function openEditor(isNew) {
   pageEditorTitle.textContent = isNew ? '给新的日期页起个名字' : '双击标题或日期牌都能打开这里';
   pageTitleInput.value = previewState.editor.title;
   pageDateInput.value = previewState.editor.targetDate;
+  pageNewButton.hidden = isNew;
   pageDeleteButton.hidden = isNew || previewState.pages.length <= 1;
   pageEditorNode.hidden = false;
   pageTitleInput.focus();
@@ -829,6 +834,7 @@ function bindInteractions() {
 
   pageEditorScrim.addEventListener('click', closeEditor);
   pageEditorClose.addEventListener('click', closeEditor);
+  pageNewButton.addEventListener('click', () => openEditor(true));
   pageCancelButton.addEventListener('click', closeEditor);
   pageDeleteButton.addEventListener('click', deleteCurrentPage);
   pageEditorForm.addEventListener('submit', (event) => {
@@ -855,7 +861,7 @@ async function init() {
     if (!localStorage.getItem(pagesStorageKey)) {
       initializePages();
     }
-    sourceStatusNode.textContent = '已读取仓库中的真实文案库和权重。双击标题或日期牌可编辑当前倒计时，标题下方的小切页器可切换多个倒计时。';
+    sourceStatusNode.textContent = '已读取仓库中的真实文案库和权重。双击标题或日期牌可编辑当前倒计时，标题上方的轻量页迹可切换多个倒计时。';
   } catch (error) {
     console.error(error);
     sourceStatusNode.textContent = '未能读取仓库源文件。请在仓库根目录运行 python3 -m http.server 8000 后再打开预览。';

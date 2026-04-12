@@ -405,7 +405,7 @@ body::before {
   text-overflow: ellipsis;
 }
 
-.preview-card__title-row {
+.preview-card__head {
   display: grid;
   justify-items: start;
   gap: 6px;
@@ -464,62 +464,71 @@ body::before {
   align-items: center;
   justify-content: flex-start;
   gap: 6px;
-  min-height: 26px;
-  padding: 4px 7px;
+  min-height: 22px;
+  padding: 2px 0;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.16);
-  border: 1px solid rgba(174, 133, 128, 0.10);
+  background: transparent;
+  border: 0;
   box-shadow: none;
   flex-shrink: 0;
   align-self: flex-start;
 }
 
-.page-switcher__nav,
-.page-switcher__add {
+.page-switcher__nav {
   appearance: none;
   border: 0;
   padding: 0;
   margin: 0;
   display: grid;
   place-items: center;
-  width: 16px;
-  height: 16px;
+  width: 15px;
+  height: 15px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.54);
-  border: 1px solid rgba(174, 133, 128, 0.14);
+  background: rgba(255, 255, 255, 0.42);
+  border: 1px solid rgba(174, 133, 128, 0.12);
   color: #573a37;
   cursor: pointer;
 }
 
-.page-switcher__nav,
-.page-switcher__add {
-  font-size: 10px;
+.page-switcher__nav {
+  font-size: 9px;
   font-weight: 700;
   line-height: 1;
   transition: transform 160ms ease, background 160ms ease;
 }
 
-.page-switcher__nav:hover,
-.page-switcher__add:hover {
+.page-switcher__nav:hover {
   transform: translateY(-1px);
   background: rgba(255, 255, 255, 0.78);
 }
 
-.page-switcher__count {
-  min-width: 34px;
-  text-align: center;
-  font-size: 10px;
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
-  color: #5f3e3a;
-  white-space: nowrap;
+.page-switcher__dots {
+  display: flex;
+  align-items: center;
+  gap: 5px;
 }
 
-.page-switcher__divider {
-  width: 1px;
-  height: 14px;
+.page-switcher__dot {
+  appearance: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  width: 6px;
+  height: 6px;
   border-radius: 999px;
-  background: rgba(174, 133, 128, 0.18);
+  background: rgba(174, 133, 128, 0.22);
+  cursor: pointer;
+  transition: width 160ms ease, background 160ms ease, transform 160ms ease;
+}
+
+.page-switcher__dot:hover {
+  transform: translateY(-1px);
+  background: rgba(174, 133, 128, 0.40);
+}
+
+.page-switcher__dot.is-active {
+  width: 12px;
+  background: rgba(174, 133, 128, 0.72);
 }
 
 .flower-button {
@@ -925,7 +934,7 @@ body::before {
     gap: 14px;
   }
 
-  .preview-card__title-row {
+  .preview-card__head {
     gap: 6px;
   }
 

@@ -47,6 +47,17 @@ struct CardView: View {
         (viewModel.pages.firstIndex(where: { $0.id == viewModel.currentPage.id }) ?? 0) + 1
     }
 
+    private var visiblePageIndices: [Int] {
+        let pageCount = max(viewModel.pages.count, 1)
+        if pageCount <= 5 {
+            return Array(0..<pageCount)
+        }
+
+        let currentIndex = max(0, currentPageIndex - 1)
+        let start = max(0, min(currentIndex - 1, pageCount - 5))
+        return Array(start..<(start + 5))
+    }
+
     private var canDeleteDraft: Bool {
         guard let draft = pageDraft else { return false }
         return !draft.isNew && viewModel.canDeleteCurrentPage
@@ -123,21 +134,25 @@ struct CardView: View {
 
     private var pageSwitcher: some View {
         HStack(spacing: 7) {
-            pageControlButton(systemName: "chevron.left", help: "上一页", action: viewModel.selectPreviousPage)
+            pageControlButton(
+                systemName: "chevron.left",
+                help: "上一页",
+                enabled: viewModel.pages.count > 1,
+                action: viewModel.selectPreviousPage
+            )
 
-            Text("\(currentPageIndex) / \(max(viewModel.pages.count, 1))")
-                .font(.system(size: 11, weight: .bold, design: .rounded))
-                .monospacedDigit()
-                .foregroundColor(Color(red: 0.44, green: 0.30, blue: 0.28))
-                .frame(minWidth: 34)
+            HStack(spacing: 5) {
+                ForEach(visiblePageIndices, id: \.self) { index in
+                    pageDot(for: index)
+                }
+            }
 
-            pageControlButton(systemName: "chevron.right", help: "下一页", action: viewModel.selectNextPage)
-
-            Capsule()
-                .fill(theme.quoteAccent.opacity(0.18))
-                .frame(width: 1, height: 14)
-
-            pageControlButton(systemName: "plus", help: "新建日期页", action: openNewPageEditor)
+            pageControlButton(
+                systemName: "chevron.right",
+                help: "下一页",
+                enabled: viewModel.pages.count > 1,
+                action: viewModel.selectNextPage
+            )
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 3)
@@ -152,21 +167,35 @@ struct CardView: View {
         .fixedSize()
     }
 
-    private func pageControlButton(systemName: String, help: String, action: @escaping () -> Void) -> some View {
+    private func pageDot(for index: Int) -> some View {
+        let isActive = index + 1 == currentPageIndex
+
+        return Button(action: { viewModel.selectPage(id: viewModel.pages[index].id) }) {
+            Capsule()
+                .fill(isActive ? theme.quoteAccent.opacity(0.72) : theme.quoteAccent.opacity(0.20))
+                .frame(width: isActive ? 12 : 6, height: 6)
+        }
+        .buttonStyle(.plain)
+        .help(viewModel.pages[index].title)
+        .animation(.easeInOut(duration: 0.16), value: currentPageIndex)
+    }
+
+    private func pageControlButton(systemName: String, help: String, enabled: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             ZStack {
                 Circle()
-                    .fill(Color.white.opacity(0.54))
+                    .fill(Color.white.opacity(enabled ? 0.54 : 0.32))
                     .frame(width: 16, height: 16)
                 Circle()
-                    .stroke(theme.quoteAccent.opacity(0.14), lineWidth: 1)
+                    .stroke(theme.quoteAccent.opacity(enabled ? 0.14 : 0.08), lineWidth: 1)
                     .frame(width: 16, height: 16)
                 Image(systemName: systemName)
                     .font(.system(size: 7.5, weight: .bold, design: .rounded))
-                    .foregroundColor(Color(red: 0.42, green: 0.28, blue: 0.26))
+                    .foregroundColor(Color(red: 0.42, green: 0.28, blue: 0.26).opacity(enabled ? 1.0 : 0.45))
             }
         }
         .buttonStyle(.plain)
+        .disabled(!enabled)
         .help(help)
     }
 
@@ -255,6 +284,8 @@ struct CardView: View {
     private var countdownBlock: some View {
         VStack(alignment: .leading, spacing: 10) {
             VStack(alignment: .leading, spacing: 6) {
+                pageSwitcher
+
                 Text(viewModel.content.title)
                     .font(.system(size: 17, weight: .semibold, design: .serif))
                     .foregroundColor(Color(red: 0.34, green: 0.20, blue: 0.19))
@@ -264,8 +295,6 @@ struct CardView: View {
                     .contentShape(Rectangle())
                     .onTapGesture(count: 2, perform: openCurrentPageEditor)
                     .help("双击编辑当前倒计时页")
-
-                pageSwitcher
             }
 
             if viewModel.content.daysRemaining == 0 {
@@ -428,12 +457,20 @@ struct CardView: View {
             }
 
             HStack(spacing: 8) {
-                if canDeleteDraft {
-                    Button(role: .destructive, action: deleteCurrentPage) {
-                        Text("删除")
-                            .frame(maxWidth: .infinity)
+                HStack(spacing: 8) {
+                    if pageDraft?.isNew != true {
+                        Button(action: openNewPageEditor) {
+                            Text("新建页")
+                        }
+                        .buttonStyle(EditorCapsuleButtonStyle(fill: Color.white.opacity(0.56), stroke: Color(red: 0.79, green: 0.67, blue: 0.63).opacity(0.24), text: Color(red: 0.44, green: 0.30, blue: 0.28)))
                     }
-                    .buttonStyle(EditorCapsuleButtonStyle(fill: Color(red: 0.63, green: 0.29, blue: 0.31).opacity(0.12), stroke: Color(red: 0.70, green: 0.35, blue: 0.37).opacity(0.28), text: Color(red: 0.57, green: 0.24, blue: 0.26)))
+
+                    if canDeleteDraft {
+                        Button(role: .destructive, action: deleteCurrentPage) {
+                            Text("删除")
+                        }
+                        .buttonStyle(EditorCapsuleButtonStyle(fill: Color(red: 0.63, green: 0.29, blue: 0.31).opacity(0.12), stroke: Color(red: 0.70, green: 0.35, blue: 0.37).opacity(0.28), text: Color(red: 0.57, green: 0.24, blue: 0.26)))
+                    }
                 }
 
                 Spacer(minLength: 0)
