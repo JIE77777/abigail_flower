@@ -42,6 +42,8 @@ const milestoneDays = new Set([200, 160, 150, 120, 100, 60, 50, 30, 10, 7, 3, 1]
 const rerollStorageKey = 'abigail-flower-preview-reroll-seed';
 const rerollDateKey = 'abigail-flower-preview-reroll-date';
 const simulatedDateStorageKey = 'abigail-flower-preview-simulated-date';
+const pagesStorageKey = 'abigail-flower-preview-pages';
+const selectedPageStorageKey = 'abigail-flower-preview-selected-page';
 
 const sourceManifest = {
   taglines: ['bright', 'cookie', 'playful', 'reminders', 'wendy'],
@@ -56,12 +58,17 @@ const previewState = {
   config: deepClone(defaultPreviewConfig),
   taglines: deepClone(fallbackData.taglines),
   easterEggs: deepClone(fallbackData.easterEggs),
+  pages: [],
+  selectedPageID: null,
+  editor: null,
 };
 
 const cardNode = document.querySelector('.preview-card');
+const currentBadgeButton = document.getElementById('current-badge-button');
 const currentBadgeYearNode = document.getElementById('current-badge-year');
 const currentBadgeDateNode = document.getElementById('current-badge-date');
 const currentBadgeWeekdayNode = document.getElementById('current-badge-weekday');
+const pageSwitcherNode = document.getElementById('page-switcher');
 const quotePanelNode = document.getElementById('quote-panel');
 const quoteFooterNode = document.getElementById('quote-footer');
 const rerollButton = document.getElementById('reroll-button');
@@ -76,6 +83,17 @@ const toneLabelNode = document.getElementById('tone-label');
 const simDateLabelNode = document.getElementById('sim-date-label');
 const simTargetLabelNode = document.getElementById('sim-target-label');
 const sourceStatusNode = document.getElementById('source-status');
+
+const pageEditorNode = document.getElementById('page-editor');
+const pageEditorScrim = document.getElementById('page-editor-scrim');
+const pageEditorForm = document.getElementById('page-editor-form');
+const pageEditorEyebrow = document.getElementById('page-editor-eyebrow');
+const pageEditorTitle = document.getElementById('page-editor-title');
+const pageEditorClose = document.getElementById('page-editor-close');
+const pageTitleInput = document.getElementById('page-title-input');
+const pageDateInput = document.getElementById('page-date-input');
+const pageDeleteButton = document.getElementById('page-delete-button');
+const pageCancelButton = document.getElementById('page-cancel-button');
 
 function cloneDataMap(map) {
   return Object.fromEntries(
@@ -151,13 +169,92 @@ function addDays(date, days) {
   return normalizeDate(result);
 }
 
-function makeTarget(today) {
-  const year = today.getFullYear();
+function makeID() {
+  if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+    return window.crypto.randomUUID();
+  }
+  return `page-${Date.now()}-${Math.random().toString(16).slice(2, 10)}`;
+}
+
+function makeDefaultTarget(referenceDate) {
+  const year = referenceDate.getFullYear();
   let target = new Date(year, previewState.config.targetMonth - 1, previewState.config.targetDay);
-  if (today > target) {
+  if (referenceDate > target) {
     target = new Date(year + 1, previewState.config.targetMonth - 1, previewState.config.targetDay);
   }
-  return target;
+  return normalizeDate(target);
+}
+
+function normalizePage(page, referenceDate = currentDayStart()) {
+  const safeTarget = (() => {
+    if (page.targetDate instanceof Date) {
+      return normalizeDate(page.targetDate);
+    }
+    if (typeof page.targetDate === 'string') {
+      const parsed = parseDateInput(page.targetDate);
+      if (parsed) return normalizeDate(parsed);
+    }
+    return addDays(referenceDate, 30);
+  })();
+
+  const title = typeof page.title === 'string' && page.title.trim() ? page.title.trim() : '新的日期';
+  const id = typeof page.id === 'string' && page.id ? page.id : makeID();
+
+  return {
+    id,
+    title,
+    targetDate: formatInputDate(safeTarget),
+  };
+}
+
+function createDefaultPage(referenceDate = currentDayStart()) {
+  return normalizePage({
+    id: makeID(),
+    title: previewState.config.titleLine,
+    targetDate: makeDefaultTarget(referenceDate),
+  }, referenceDate);
+}
+
+function savePages() {
+  localStorage.setItem(pagesStorageKey, JSON.stringify(previewState.pages));
+  if (previewState.selectedPageID) {
+    localStorage.setItem(selectedPageStorageKey, previewState.selectedPageID);
+  }
+}
+
+function initializePages() {
+  let storedPages = [];
+  try {
+    const raw = localStorage.getItem(pagesStorageKey);
+    const parsed = raw ? JSON.parse(raw) : [];
+    if (Array.isArray(parsed)) {
+      storedPages = parsed.map((page) => normalizePage(page));
+    }
+  } catch (error) {
+    console.warn('Failed to load preview pages', error);
+  }
+
+  if (!storedPages.length) {
+    storedPages = [createDefaultPage()];
+  }
+
+  previewState.pages = storedPages;
+  const storedSelected = localStorage.getItem(selectedPageStorageKey);
+  previewState.selectedPageID = storedPages.some((page) => page.id === storedSelected)
+    ? storedSelected
+    : storedPages[0].id;
+  savePages();
+}
+
+function currentPage() {
+  if (!previewState.pages.length) {
+    initializePages();
+  }
+  return previewState.pages.find((page) => page.id === previewState.selectedPageID) || previewState.pages[0];
+}
+
+function currentTargetDate() {
+  return parseDateInput(currentPage().targetDate) || makeDefaultTarget(currentDayStart());
 }
 
 function daysRemaining(today, target) {
@@ -304,13 +401,16 @@ function saveRerollSeed(today) {
 
 function resolveTone(days) {
   if (days === 0) return 'today';
+  if (days < 0) return 'default';
   if (days <= 10) return 'final';
   if (milestoneDays.has(days)) return 'milestone';
   return 'default';
 }
 
-function renderCountdown(days) {
-  const titleLine = previewState.config.titleLine;
+function renderCountdown(days, titleLine) {
+  const absolute = Math.abs(days);
+  const unit = days < 0 ? '天前' : '天';
+
   if (days === 0) {
     countdownBlock.innerHTML = `
       <p class="preview-card__title preview-card__title--count">${titleLine}</p>
@@ -318,7 +418,7 @@ function renderCountdown(days) {
         <span class="preview-card__days">今天</span>
       </div>
       <div class="preview-card__countline">
-        <span class="preview-card__unit">就是 8.31</span>
+        <span class="preview-card__unit">就是这一天</span>
       </div>
     `;
     return;
@@ -327,8 +427,8 @@ function renderCountdown(days) {
   countdownBlock.innerHTML = `
     <p class="preview-card__title preview-card__title--count">${titleLine}</p>
     <div class="preview-card__countline">
-      <span class="preview-card__days">${days}</span>
-      <span class="preview-card__unit">天</span>
+      <span class="preview-card__days">${absolute}</span>
+      <span class="preview-card__unit">${unit}</span>
     </div>
   `;
 }
@@ -378,6 +478,33 @@ function renderEggFooter(entry) {
   chip.className = 'quote-chip';
   chip.textContent = entry.lines[0];
   quoteFooterNode.appendChild(chip);
+}
+
+function renderPageSwitcher() {
+  const activePage = currentPage();
+  pageSwitcherNode.innerHTML = '';
+
+  previewState.pages.forEach((page) => {
+    const button = document.createElement('button');
+    button.className = `page-switcher__dot${page.id === activePage.id ? ' is-active' : ''}`;
+    button.type = 'button';
+    button.title = `${page.title} · ${page.targetDate}`;
+    button.innerHTML = '<span></span>';
+    button.addEventListener('click', () => {
+      previewState.selectedPageID = page.id;
+      savePages();
+      renderCard();
+    });
+    pageSwitcherNode.appendChild(button);
+  });
+
+  const addButton = document.createElement('button');
+  addButton.className = 'page-switcher__add';
+  addButton.type = 'button';
+  addButton.title = '新建日期页';
+  addButton.textContent = '+';
+  addButton.addEventListener('click', () => openEditor(true));
+  pageSwitcherNode.appendChild(addButton);
 }
 
 function parseEnvText(text) {
@@ -497,7 +624,7 @@ function syncJumpButtons(today, target) {
     target,
     minus30: addDays(target, -30),
     minus10: addDays(target, -10),
-    august: new Date(target.getFullYear(), 7, 1),
+    'month-start': new Date(target.getFullYear(), target.getMonth(), 1),
   };
 
   jumpButtons.forEach((button) => {
@@ -510,15 +637,16 @@ function syncJumpButtons(today, target) {
 
 function renderCard() {
   const today = loadSimulatedDate();
-  const target = makeTarget(today);
+  const page = currentPage();
+  const target = currentTargetDate();
   const remainingDaysCount = daysRemaining(today, target);
-  const seedBase = `${dayStamp(today)}::${previewState.config.titleLine}`;
+  const seedBase = `${dayStamp(today)}::${page.id}`;
   const rerollSeed = currentRerollSeed(today);
   const seedText = rerollSeed ? `${seedBase}::${rerollSeed}` : seedBase;
   const entries = pickTaglines(seedText);
   const egg = pickEasterEgg(seedText, today, remainingDaysCount);
   const tone = resolveTone(remainingDaysCount);
-  const badgeParts = currentDateCardParts(today);
+  const badgeParts = currentDateCardParts(target);
 
   cardNode.dataset.tone = tone;
   currentBadgeYearNode.textContent = badgeParts.year;
@@ -526,18 +654,18 @@ function renderCard() {
   currentBadgeWeekdayNode.textContent = badgeParts.weekday;
   simDateInput.value = formatInputDate(today);
   simDateLabelNode.textContent = `模拟日期：${formatFullDateLabel(today)}`;
-  simTargetLabelNode.textContent = `目标日期：${formatTargetLabel(target)}`;
+  simTargetLabelNode.textContent = `当前页：${page.title} · ${formatTargetLabel(target)}`;
   toneLabelNode.textContent = toneLabel(tone);
 
   syncJumpButtons(today, target);
-  renderCountdown(remainingDaysCount);
+  renderCountdown(remainingDaysCount, page.title);
   renderPrimaryEntries(entries);
   renderEggFooter(egg);
+  renderPageSwitcher();
 }
 
 function jumpToPreset(kind) {
-  const current = loadSimulatedDate();
-  const target = makeTarget(current);
+  const target = currentTargetDate();
 
   switch (kind) {
     case 'target':
@@ -549,8 +677,8 @@ function jumpToPreset(kind) {
     case 'minus10':
       saveSimulatedDate(addDays(target, -10));
       break;
-    case 'august':
-      saveSimulatedDate(new Date(target.getFullYear(), 7, 1));
+    case 'month-start':
+      saveSimulatedDate(new Date(target.getFullYear(), target.getMonth(), 1));
       break;
     default:
       return;
@@ -559,11 +687,88 @@ function jumpToPreset(kind) {
   renderCard();
 }
 
+function openEditor(isNew) {
+  const page = currentPage();
+  const baseDate = parseDateInput(page.targetDate) || currentDayStart();
+  previewState.editor = isNew
+    ? {
+        isNew: true,
+        sourcePageID: null,
+        title: '新的日期',
+        targetDate: formatInputDate(addDays(baseDate, 30)),
+      }
+    : {
+        isNew: false,
+        sourcePageID: page.id,
+        title: page.title,
+        targetDate: page.targetDate,
+      };
+
+  pageEditorEyebrow.textContent = isNew ? '新建倒计时页' : '编辑当前倒计时';
+  pageEditorTitle.textContent = isNew ? '给新的日期页起个名字' : '双击日期牌也能打开这里';
+  pageTitleInput.value = previewState.editor.title;
+  pageDateInput.value = previewState.editor.targetDate;
+  pageDeleteButton.hidden = isNew || previewState.pages.length <= 1;
+  pageEditorNode.hidden = false;
+  pageTitleInput.focus();
+  pageTitleInput.select();
+}
+
+function closeEditor() {
+  previewState.editor = null;
+  pageEditorNode.hidden = true;
+}
+
+function saveEditor() {
+  if (!previewState.editor) return;
+
+  const draftTitle = pageTitleInput.value.trim() || '新的日期';
+  const draftDate = parseDateInput(pageDateInput.value) || addDays(currentTargetDate(), 30);
+  const page = normalizePage({
+    id: previewState.editor.sourcePageID || makeID(),
+    title: draftTitle,
+    targetDate: draftDate,
+  });
+
+  if (previewState.editor.isNew) {
+    const currentIndex = previewState.pages.findIndex((entry) => entry.id === previewState.selectedPageID);
+    const insertionIndex = currentIndex === -1 ? previewState.pages.length : currentIndex + 1;
+    previewState.pages.splice(insertionIndex, 0, page);
+  } else {
+    const index = previewState.pages.findIndex((entry) => entry.id === page.id);
+    if (index !== -1) {
+      previewState.pages.splice(index, 1, page);
+    }
+  }
+
+  previewState.selectedPageID = page.id;
+  savePages();
+  closeEditor();
+  renderCard();
+}
+
+function deleteCurrentPage() {
+  if (previewState.pages.length <= 1) return;
+  const index = previewState.pages.findIndex((page) => page.id === previewState.selectedPageID);
+  if (index === -1) return;
+
+  previewState.pages.splice(index, 1);
+  const fallbackIndex = Math.min(index, previewState.pages.length - 1);
+  previewState.selectedPageID = previewState.pages[fallbackIndex].id;
+  savePages();
+  closeEditor();
+  renderCard();
+}
+
 function bindInteractions() {
   rerollButton.addEventListener('click', () => {
     const today = loadSimulatedDate();
     saveRerollSeed(today);
     renderCard();
+  });
+
+  currentBadgeButton.addEventListener('dblclick', () => {
+    openEditor(false);
   });
 
   jumpTodayButton.addEventListener('click', () => {
@@ -594,9 +799,25 @@ function bindInteractions() {
       if (kind) jumpToPreset(kind);
     });
   });
+
+  pageEditorScrim.addEventListener('click', closeEditor);
+  pageEditorClose.addEventListener('click', closeEditor);
+  pageCancelButton.addEventListener('click', closeEditor);
+  pageDeleteButton.addEventListener('click', deleteCurrentPage);
+  pageEditorForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    saveEditor();
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && !pageEditorNode.hidden) {
+      closeEditor();
+    }
+  });
 }
 
 async function init() {
+  initializePages();
   bindInteractions();
   updateMetaCounters();
   renderCard();
@@ -604,7 +825,10 @@ async function init() {
   try {
     await loadSourceFiles();
     updateMetaCounters();
-    sourceStatusNode.textContent = '已读取仓库中的真实文案库和权重。你改完源文件，刷新这里就能看到。';
+    if (!localStorage.getItem(pagesStorageKey)) {
+      initializePages();
+    }
+    sourceStatusNode.textContent = '已读取仓库中的真实文案库和权重。双击日期牌可编辑当前倒计时，点右侧圆点切页。';
   } catch (error) {
     console.error(error);
     sourceStatusNode.textContent = '未能读取仓库源文件。请在仓库根目录运行 python3 -m http.server 8000 后再打开预览。';

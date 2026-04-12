@@ -4,27 +4,20 @@ import AppKit
 struct CardView: View {
     @ObservedObject var viewModel: CardViewModel
     @State private var isFlowerHovered = false
+    @State private var pageDraft: CountdownPageDraft?
 
     private let quotePanelHeight: CGFloat = 94
 
-    private var theme: CardTheme {
-        CardTheme.resolve(daysRemaining: viewModel.content.daysRemaining)
+    private var themedDaysRemaining: Int {
+        viewModel.content.daysRemaining < 0 ? 99 : viewModel.content.daysRemaining
     }
 
-    private var currentDateCard: (year: String, date: String, weekday: String) {
-        let today = Date()
-        let calendar = Calendar.current
-        let year = calendar.component(.year, from: today)
-        let month = calendar.component(.month, from: today)
-        let day = calendar.component(.day, from: today)
-        let weekday = calendar.component(.weekday, from: today)
-        let weekdays = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"]
-        let weekdayText = weekdays[max(0, min(weekdays.count - 1, weekday - 1))]
-        return (
-            year: String(year),
-            date: String(format: "%02d.%02d", month, day),
-            weekday: weekdayText
-        )
+    private var theme: CardTheme {
+        CardTheme.resolve(daysRemaining: themedDaysRemaining)
+    }
+
+    private var targetDateCard: (year: String, date: String, weekday: String) {
+        dateCardParts(for: viewModel.currentPage.targetDate)
     }
 
     private var primaryEntries: [CardEntry] {
@@ -33,6 +26,26 @@ struct CardView: View {
 
     private var easterEggLine: String? {
         viewModel.content.entries.first(where: isEasterEgg)?.lines.first
+    }
+
+    private var absoluteDaysRemaining: Int {
+        abs(viewModel.content.daysRemaining)
+    }
+
+    private var countdownUnitText: String {
+        if viewModel.content.daysRemaining == 0 {
+            return "就是这一天"
+        }
+        return viewModel.content.daysRemaining < 0 ? "天前" : "天"
+    }
+
+    private var hasPageEditor: Bool {
+        pageDraft != nil
+    }
+
+    private var canDeleteDraft: Bool {
+        guard let draft = pageDraft else { return false }
+        return !draft.isNew && viewModel.canDeleteCurrentPage
     }
 
     var body: some View {
@@ -47,11 +60,36 @@ struct CardView: View {
             }
             .padding(.horizontal, 24)
             .padding(.vertical, 22)
+
+            if hasPageEditor {
+                pageEditorOverlay
+                    .transition(.opacity.combined(with: .scale(scale: 0.98, anchor: .topTrailing)))
+            }
         }
+        .animation(.easeInOut(duration: 0.18), value: hasPageEditor)
         .opacity(viewModel.config.cardOpacity)
         .frame(width: viewModel.panelSize.width, height: viewModel.panelSize.height)
         .background(Color.clear)
         .contextMenu {
+            Button("编辑当前日期") {
+                openCurrentPageEditor()
+            }
+            Button("新建日期页") {
+                openNewPageEditor()
+            }
+            Divider()
+            Button("上一页") {
+                viewModel.selectPreviousPage()
+            }
+            Button("下一页") {
+                viewModel.selectNextPage()
+            }
+            if viewModel.canDeleteCurrentPage {
+                Button("删除当前页", role: .destructive) {
+                    viewModel.deleteCurrentPage()
+                }
+            }
+            Divider()
             Button("换一句") {
                 viewModel.reroll()
             }
@@ -76,9 +114,47 @@ struct CardView: View {
     private var dateColumn: some View {
         VStack(alignment: .trailing, spacing: 10) {
             currentDateBadge
+            pageSwitcher
         }
-        .frame(width: 88, alignment: .trailing)
+        .frame(width: 98, alignment: .trailing)
         .padding(.top, 4)
+    }
+
+    private var pageSwitcher: some View {
+        HStack(spacing: 6) {
+            ForEach(viewModel.pages) { page in
+                Button {
+                    viewModel.selectPage(id: page.id)
+                } label: {
+                    Capsule()
+                        .fill(page.id == viewModel.currentPage.id ? theme.quoteAccent.opacity(0.92) : theme.quoteAccent.opacity(0.26))
+                        .frame(width: page.id == viewModel.currentPage.id ? 18 : 7, height: 7)
+                        .overlay(
+                            Capsule()
+                                .stroke(Color.white.opacity(page.id == viewModel.currentPage.id ? 0.42 : 0.16), lineWidth: 0.6)
+                        )
+                }
+                .buttonStyle(.plain)
+                .help(page.title)
+            }
+
+            Button(action: openNewPageEditor) {
+                ZStack {
+                    Circle()
+                        .fill(Color.white.opacity(0.52))
+                        .frame(width: 18, height: 18)
+                    Circle()
+                        .stroke(theme.quoteAccent.opacity(0.22), lineWidth: 1)
+                        .frame(width: 18, height: 18)
+                    Image(systemName: "plus")
+                        .font(.system(size: 9, weight: .bold, design: .rounded))
+                        .foregroundColor(Color(red: 0.42, green: 0.28, blue: 0.26))
+                }
+            }
+            .buttonStyle(.plain)
+            .help("新建日期页")
+        }
+        .padding(.trailing, 2)
     }
 
     private var embeddedRerollButton: some View {
@@ -117,7 +193,7 @@ struct CardView: View {
 
     private var currentDateBadge: some View {
         VStack(spacing: 0) {
-            Text(currentDateCard.year)
+            Text(targetDateCard.year)
                 .font(.system(size: 10, weight: .bold, design: .rounded))
                 .tracking(1.6)
                 .foregroundColor(Color.white.opacity(0.96))
@@ -135,13 +211,13 @@ struct CardView: View {
                 )
 
             VStack(spacing: 4) {
-                Text(currentDateCard.date)
+                Text(targetDateCard.date)
                     .font(.system(size: 20, weight: .bold, design: .rounded))
                     .monospacedDigit()
                     .tracking(-0.7)
                     .foregroundColor(Color(red: 0.34, green: 0.20, blue: 0.19))
 
-                Text(currentDateCard.weekday)
+                Text(targetDateCard.weekday)
                     .font(.system(size: 10, weight: .semibold, design: .rounded))
                     .tracking(0.8)
                     .foregroundColor(theme.badgeText)
@@ -158,6 +234,9 @@ struct CardView: View {
                 .stroke(Color(red: 0.82, green: 0.71, blue: 0.67).opacity(0.14), lineWidth: 1)
         )
         .shadow(color: Color(red: 0.33, green: 0.19, blue: 0.17).opacity(0.07), radius: 12, x: 0, y: 8)
+        .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .onTapGesture(count: 2, perform: openCurrentPageEditor)
+        .help("双击编辑日期与标签")
     }
 
     private var countdownBlock: some View {
@@ -167,6 +246,7 @@ struct CardView: View {
                 .foregroundColor(Color(red: 0.34, green: 0.20, blue: 0.19))
                 .tracking(0.7)
                 .padding(.leading, 2)
+                .lineLimit(1)
 
             if viewModel.content.daysRemaining == 0 {
                 Text("今天")
@@ -174,18 +254,18 @@ struct CardView: View {
                     .foregroundColor(Color(red: 0.18, green: 0.10, blue: 0.10))
                     .tracking(-1.6)
 
-                Text("就是 8.31")
+                Text(countdownUnitText)
                     .font(.system(size: 24, weight: .semibold, design: .rounded))
                     .foregroundColor(theme.unitColor)
             } else {
                 HStack(alignment: .lastTextBaseline, spacing: 6) {
-                    Text("\(viewModel.content.daysRemaining)")
+                    Text("\(absoluteDaysRemaining)")
                         .font(.system(size: 92, weight: .bold, design: .rounded))
                         .foregroundColor(Color(red: 0.18, green: 0.10, blue: 0.10))
                         .tracking(-3.3)
                         .minimumScaleFactor(0.82)
 
-                    Text("天")
+                    Text(countdownUnitText)
                         .font(.system(size: 22, weight: .semibold, design: .rounded))
                         .foregroundColor(theme.unitColor)
                         .padding(.bottom, 7)
@@ -242,6 +322,151 @@ struct CardView: View {
         )
         .shadow(color: Color(red: 0.33, green: 0.19, blue: 0.17).opacity(0.10), radius: 18, x: 0, y: 12)
         .clipped()
+    }
+
+    private var pageEditorOverlay: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 30, style: .continuous)
+                .fill(Color.black.opacity(0.08))
+                .onTapGesture(perform: closePageEditor)
+
+            pageEditorPanel
+                .padding(18)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+        }
+    }
+
+    private var pageEditorPanel: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(pageDraft?.isNew == true ? "新建日期页" : "编辑当前日期")
+                        .font(.system(size: 14, weight: .semibold, design: .serif))
+                        .foregroundColor(Color(red: 0.30, green: 0.18, blue: 0.17))
+                    Text("双击日期牌也能打开这里")
+                        .font(.system(size: 10, weight: .medium, design: .rounded))
+                        .foregroundColor(Color(red: 0.52, green: 0.37, blue: 0.34))
+                }
+
+                Spacer(minLength: 10)
+
+                Button(action: closePageEditor) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundColor(Color(red: 0.45, green: 0.31, blue: 0.29))
+                        .frame(width: 22, height: 22)
+                        .background(
+                            Circle()
+                                .fill(Color.white.opacity(0.56))
+                        )
+                }
+                .buttonStyle(.plain)
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("标签")
+                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                    .foregroundColor(Color(red: 0.50, green: 0.35, blue: 0.32))
+                    .tracking(0.5)
+                TextField("给日期起个名字", text: draftTitleBinding)
+                    .textFieldStyle(.plain)
+                    .padding(.horizontal, 11)
+                    .padding(.vertical, 9)
+                    .background(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(Color.white.opacity(0.82))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                    .stroke(Color(red: 0.79, green: 0.67, blue: 0.63).opacity(0.28), lineWidth: 1)
+                            )
+                    )
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("日期")
+                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                    .foregroundColor(Color(red: 0.50, green: 0.35, blue: 0.32))
+                    .tracking(0.5)
+
+                DatePicker(
+                    "目标日期",
+                    selection: draftDateBinding,
+                    displayedComponents: .date
+                )
+                .datePickerStyle(.compact)
+                .labelsHidden()
+                .padding(.horizontal, 11)
+                .padding(.vertical, 9)
+                .background(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .fill(Color.white.opacity(0.82))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .stroke(Color(red: 0.79, green: 0.67, blue: 0.63).opacity(0.28), lineWidth: 1)
+                        )
+                )
+            }
+
+            HStack(spacing: 8) {
+                if canDeleteDraft {
+                    Button(role: .destructive, action: deleteCurrentPage) {
+                        Text("删除")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(EditorCapsuleButtonStyle(fill: Color(red: 0.63, green: 0.29, blue: 0.31).opacity(0.12), stroke: Color(red: 0.70, green: 0.35, blue: 0.37).opacity(0.28), text: Color(red: 0.57, green: 0.24, blue: 0.26)))
+                }
+
+                Spacer(minLength: 0)
+
+                Button(action: closePageEditor) {
+                    Text("取消")
+                }
+                .buttonStyle(EditorCapsuleButtonStyle(fill: Color.white.opacity(0.56), stroke: Color(red: 0.79, green: 0.67, blue: 0.63).opacity(0.24), text: Color(red: 0.44, green: 0.30, blue: 0.28)))
+
+                Button(action: saveDraft) {
+                    Text("保存")
+                }
+                .buttonStyle(EditorCapsuleButtonStyle(fill: theme.quoteAccent.opacity(0.18), stroke: theme.quoteAccent.opacity(0.24), text: Color(red: 0.37, green: 0.23, blue: 0.21)))
+            }
+        }
+        .padding(14)
+        .frame(width: 236)
+        .background(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color(red: 1.0, green: 0.98, blue: 0.96).opacity(0.96),
+                            Color(red: 0.97, green: 0.93, blue: 0.90).opacity(0.94),
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        .stroke(Color.white.opacity(0.56), lineWidth: 1)
+                )
+        )
+        .shadow(color: Color(red: 0.33, green: 0.19, blue: 0.17).opacity(0.14), radius: 26, x: 0, y: 16)
+    }
+
+    private var draftTitleBinding: Binding<String> {
+        Binding(
+            get: { pageDraft?.title ?? "" },
+            set: { newValue in
+                updatePageDraft { $0.title = newValue }
+            }
+        )
+    }
+
+    private var draftDateBinding: Binding<Date> {
+        Binding(
+            get: { pageDraft?.targetDate ?? Date() },
+            set: { newValue in
+                updatePageDraft { $0.targetDate = newValue }
+            }
+        )
     }
 
     private var backgroundLayer: some View {
@@ -303,8 +528,52 @@ struct CardView: View {
         return Image(systemName: "sparkles")
     }
 
+    private func dateCardParts(for date: Date) -> (year: String, date: String, weekday: String) {
+        let calendar = Calendar.current
+        let year = calendar.component(.year, from: date)
+        let month = calendar.component(.month, from: date)
+        let day = calendar.component(.day, from: date)
+        let weekday = calendar.component(.weekday, from: date)
+        let weekdays = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"]
+        let weekdayText = weekdays[max(0, min(weekdays.count - 1, weekday - 1))]
+        return (
+            year: String(year),
+            date: String(format: "%02d.%02d", month, day),
+            weekday: weekdayText
+        )
+    }
+
     private func isEasterEgg(_ entry: CardEntry) -> Bool {
         entry.lines.first?.hasPrefix("隐藏彩蛋：") == true
+    }
+
+    private func openCurrentPageEditor() {
+        pageDraft = viewModel.beginEditingCurrentPage()
+    }
+
+    private func openNewPageEditor() {
+        pageDraft = viewModel.beginCreatingPage()
+    }
+
+    private func closePageEditor() {
+        pageDraft = nil
+    }
+
+    private func saveDraft() {
+        guard let draft = pageDraft else { return }
+        viewModel.savePage(from: draft)
+        pageDraft = nil
+    }
+
+    private func deleteCurrentPage() {
+        viewModel.deleteCurrentPage()
+        pageDraft = nil
+    }
+
+    private func updatePageDraft(_ update: (inout CountdownPageDraft) -> Void) {
+        guard var draft = pageDraft else { return }
+        update(&draft)
+        pageDraft = draft
     }
 }
 
@@ -380,6 +649,29 @@ private struct EggChip: View {
                             .stroke(accentColor.opacity(0.10), lineWidth: 1)
                     )
             )
+    }
+}
+
+private struct EditorCapsuleButtonStyle: ButtonStyle {
+    let fill: Color
+    let stroke: Color
+    let text: Color
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.system(size: 12, weight: .bold, design: .rounded))
+            .foregroundColor(text)
+            .padding(.horizontal, 11)
+            .padding(.vertical, 7)
+            .background(
+                Capsule()
+                    .fill(fill.opacity(configuration.isPressed ? 0.84 : 1.0))
+                    .overlay(
+                        Capsule()
+                            .stroke(stroke, lineWidth: 1)
+                    )
+            )
+            .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
     }
 }
 

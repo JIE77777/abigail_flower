@@ -234,19 +234,11 @@ final class CountdownEngine {
         return config
     }
 
-    func generateContent(config: CardConfig, now: Date = Date()) -> CardContent {
+    func generateContent(config: CardConfig, page: CountdownPage, now: Date = Date()) -> CardContent {
         let today = calendar.startOfDay(for: now)
-        var components = calendar.dateComponents([.year], from: today)
-        components.month = config.targetMonth
-        components.day = config.targetDay
-        var target = calendar.date(from: components) ?? today
-        if today > target {
-            components.year = (components.year ?? calendar.component(.year, from: today)) + 1
-            target = calendar.date(from: components) ?? target
-        }
-
+        let target = calendar.startOfDay(for: page.targetDate)
         let days = calendar.dateComponents([.day], from: today, to: target).day ?? 0
-        let seedBase = "\(AppStateStore.dayStamp(from: today))::\(config.titleLine)"
+        let seedBase = "\(AppStateStore.dayStamp(from: today))::\(page.id.uuidString)"
         let generatorMode = config.taglineMode.lowercased()
 
         var subtitleEntries: [CardEntry] = []
@@ -285,7 +277,7 @@ final class CountdownEngine {
             }
         }
 
-        return CardContent(title: config.titleLine, entries: allEntries, daysRemaining: days)
+        return CardContent(title: page.title, entries: allEntries, daysRemaining: days)
     }
 
     @discardableResult

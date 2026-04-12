@@ -17,7 +17,7 @@
           <h1>阿比盖尔之花</h1>
           <p class="stage__copy">
             这是原生 macOS 卡片 app 的网页模拟预览。它会直接读取仓库里的真实文案库和权重，
-            你可以在这里模拟不同日期下的卡片气质和排版。
+            现在也可以模拟多个独立倒计时页，并直接在卡片里双击日期牌编辑当前页。
           </p>
           <div class="stage__meta">
             <span id="tagline-count">副标题读取中</span>
@@ -47,15 +47,15 @@
             </div>
 
             <div class="preview-controls__quick">
-              <button class="preview-chip-button" type="button" data-jump="target">8.31 当天</button>
+              <button class="preview-chip-button" type="button" data-jump="target">目标当天</button>
               <button class="preview-chip-button" type="button" data-jump="minus30">前 30 天</button>
               <button class="preview-chip-button" type="button" data-jump="minus10">前 10 天</button>
-              <button class="preview-chip-button" type="button" data-jump="august">8 月初</button>
+              <button class="preview-chip-button" type="button" data-jump="month-start">目标月月初</button>
             </div>
 
             <div class="preview-controls__summary">
               <p id="sim-date-label">模拟日期：2026.03.24 周二</p>
-              <p id="sim-target-label">目标日期：2026.08.31</p>
+              <p id="sim-target-label">当前页：距离 8.31 · 2026.08.31</p>
             </div>
 
             <p class="preview-controls__status" id="source-status">正在读取仓库中的真实文案库…</p>
@@ -80,11 +80,20 @@
               </section>
 
               <div class="preview-card__utility">
-                <div class="preview-card__badge" id="current-badge" aria-label="当前日期">
-                  <span class="preview-card__badge-year" id="current-badge-year">2026</span>
-                  <span class="preview-card__badge-date" id="current-badge-date">03.24</span>
-                  <span class="preview-card__badge-weekday" id="current-badge-weekday">周二</span>
-                </div>
+                <button
+                  class="preview-card__badge-button"
+                  id="current-badge-button"
+                  type="button"
+                  aria-label="编辑当前倒计时日期"
+                  title="双击编辑当前倒计时日期"
+                >
+                  <div class="preview-card__badge" id="current-badge" aria-hidden="true">
+                    <span class="preview-card__badge-year" id="current-badge-year">2026</span>
+                    <span class="preview-card__badge-date" id="current-badge-date">08.31</span>
+                    <span class="preview-card__badge-weekday" id="current-badge-weekday">周一</span>
+                  </div>
+                </button>
+                <div class="page-switcher" id="page-switcher" aria-label="倒计时切换"></div>
               </div>
             </section>
 
@@ -104,6 +113,37 @@
                 <img src="../App/Resources/Defaults/icons/abigail_flower_level3.png" alt="阿比盖尔之花" />
               </button>
             </section>
+          </div>
+
+          <div class="page-editor" id="page-editor" hidden>
+            <button class="page-editor__scrim" id="page-editor-scrim" type="button" aria-label="关闭"></button>
+            <form class="page-editor__panel" id="page-editor-form">
+              <div class="page-editor__head">
+                <div>
+                  <p class="page-editor__eyebrow" id="page-editor-eyebrow">编辑当前倒计时</p>
+                  <h3 id="page-editor-title">双击日期牌也能打开这里</h3>
+                </div>
+                <button class="page-editor__close" id="page-editor-close" type="button" aria-label="关闭">×</button>
+              </div>
+
+              <label class="page-editor__field" for="page-title-input">
+                <span>标签</span>
+                <input id="page-title-input" type="text" maxlength="18" placeholder="给日期起个名字" />
+              </label>
+
+              <label class="page-editor__field" for="page-date-input">
+                <span>日期</span>
+                <input id="page-date-input" type="date" />
+              </label>
+
+              <div class="page-editor__actions">
+                <button class="page-editor__button page-editor__button--danger" id="page-delete-button" type="button">删除</button>
+                <div class="page-editor__actions-right">
+                  <button class="page-editor__button" id="page-cancel-button" type="button">取消</button>
+                  <button class="page-editor__button page-editor__button--primary" type="submit">保存</button>
+                </div>
+              </div>
+            </form>
           </div>
         </section>
       </section>

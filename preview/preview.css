@@ -258,6 +258,7 @@ body::before {
 }
 
 .preview-card-shell {
+  position: relative;
   display: grid;
   place-items: center;
   justify-self: end;
@@ -368,6 +369,22 @@ body::before {
   padding-top: 4px;
 }
 
+.preview-card__badge-button {
+  appearance: none;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.preview-card__badge-button:hover .preview-card__badge {
+  transform: translateY(-1px);
+  box-shadow:
+    0 12px 22px rgba(84, 47, 40, 0.10),
+    inset 0 1px 0 rgba(255, 255, 255, 0.58);
+}
+
 .preview-card__title {
   margin: 0;
   font-family: var(--font-serif);
@@ -395,6 +412,7 @@ body::before {
   box-shadow:
     0 10px 20px rgba(84, 47, 40, 0.07),
     inset 0 1px 0 rgba(255, 255, 255, 0.58);
+  transition: transform 160ms ease, box-shadow 160ms ease;
 }
 
 .preview-card__badge-year,
@@ -429,6 +447,59 @@ body::before {
   font-weight: 700;
   letter-spacing: 0.10em;
   color: var(--badge-text);
+}
+
+.page-switcher {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  min-height: 18px;
+  padding-right: 2px;
+}
+
+.page-switcher__dot,
+.page-switcher__add {
+  appearance: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.page-switcher__dot span {
+  display: block;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(174, 133, 128, 0.26);
+  box-shadow: inset 0 0 0 0.6px rgba(255, 255, 255, 0.16);
+  transition: width 180ms ease, background 180ms ease, transform 180ms ease;
+}
+
+.page-switcher__dot.is-active span {
+  width: 18px;
+  background: rgba(174, 133, 128, 0.92);
+  box-shadow: inset 0 0 0 0.6px rgba(255, 255, 255, 0.42);
+}
+
+.page-switcher__dot:hover span {
+  transform: translateY(-1px);
+}
+
+.page-switcher__add {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.52);
+  color: #573a37;
+  border: 1px solid rgba(174, 133, 128, 0.22);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
 }
 
 .flower-button {
@@ -655,6 +726,138 @@ body::before {
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
+}
+
+.page-editor {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  align-items: start;
+  justify-items: end;
+  padding: 18px;
+  z-index: 4;
+}
+
+.page-editor[hidden] {
+  display: none;
+}
+
+.page-editor__scrim {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  padding: 0;
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 30px;
+  cursor: default;
+}
+
+.page-editor__panel {
+  position: relative;
+  z-index: 1;
+  width: 236px;
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.56);
+  border-radius: 20px;
+  background: linear-gradient(145deg, rgba(255, 250, 245, 0.96), rgba(247, 237, 229, 0.94));
+  box-shadow: 0 26px 40px rgba(84, 47, 40, 0.14);
+}
+
+.page-editor__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.page-editor__eyebrow {
+  margin: 0 0 4px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: #84605b;
+}
+
+.page-editor__head h3 {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 14px;
+  line-height: 1.35;
+  color: #4d2e2b;
+}
+
+.page-editor__close {
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.56);
+  color: #664540;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.page-editor__field {
+  display: grid;
+  gap: 6px;
+}
+
+.page-editor__field span {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #7d5a55;
+}
+
+.page-editor__field input {
+  width: 100%;
+  padding: 10px 11px;
+  border-radius: 14px;
+  border: 1px solid rgba(201, 170, 161, 0.28);
+  background: rgba(255, 255, 255, 0.82);
+  color: #412625;
+  font: inherit;
+}
+
+.page-editor__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.page-editor__actions-right {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+}
+
+.page-editor__button {
+  appearance: none;
+  border: 1px solid rgba(201, 170, 161, 0.24);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.56);
+  color: #5b3d39;
+  padding: 7px 11px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.page-editor__button--primary {
+  background: rgba(174, 133, 128, 0.18);
+  border-color: rgba(174, 133, 128, 0.24);
+  color: #49302d;
+}
+
+.page-editor__button--danger {
+  background: rgba(161, 74, 80, 0.12);
+  border-color: rgba(179, 83, 89, 0.28);
+  color: #8a3940;
 }
 
 @media (max-width: 900px) {
