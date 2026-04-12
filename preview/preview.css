@@ -35,6 +35,11 @@ body {
   overflow-x: hidden;
 }
 
+body.is-card-dragging {
+  user-select: none;
+  cursor: grabbing;
+}
+
 body::before {
   content: "";
   position: fixed;
@@ -263,6 +268,14 @@ body::before {
   place-items: center;
   justify-self: end;
   width: 400px;
+  transform: translate(var(--preview-card-offset-x, 0px), var(--preview-card-offset-y, 0px));
+  transition: transform 180ms ease;
+  will-change: transform;
+}
+
+.preview-card-shell.is-dragging {
+  transition: none;
+  z-index: 3;
 }
 
 .preview-card {
@@ -283,6 +296,11 @@ body::before {
   box-shadow:
     0 30px 60px rgba(39, 21, 21, 0.14),
     0 12px 22px var(--card-shadow);
+  cursor: grab;
+}
+
+.preview-card-shell.is-dragging .preview-card {
+  cursor: grabbing;
 }
 
 .preview-card[data-tone="milestone"] {

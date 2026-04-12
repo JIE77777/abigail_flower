@@ -44,6 +44,7 @@ const rerollDateKey = 'abigail-flower-preview-reroll-date';
 const simulatedDateStorageKey = 'abigail-flower-preview-simulated-date';
 const pagesStorageKey = 'abigail-flower-preview-pages';
 const selectedPageStorageKey = 'abigail-flower-preview-selected-page';
+const cardOffsetStorageKey = 'abigail-flower-preview-card-offset';
 
 const sourceManifest = {
   taglines: ['bright', 'cookie', 'playful', 'reminders', 'wendy'],
@@ -62,8 +63,10 @@ const previewState = {
   selectedPageID: null,
   editor: null,
   overviewOpen: false,
+  cardOffset: { x: 0, y: 0 },
 };
 
+const cardShellNode = document.querySelector('.preview-card-shell');
 const cardNode = document.querySelector('.preview-card');
 const currentBadgeButton = document.getElementById('current-badge-button');
 const currentBadgeYearNode = document.getElementById('current-badge-year');
@@ -117,6 +120,10 @@ function cloneDataMap(map) {
 
 function sumEntries(map) {
   return Object.values(map).reduce((sum, entries) => sum + entries.length, 0);
+}
+
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max);
 }
 
 function toInt(value, fallback) {
@@ -202,6 +209,40 @@ function syncEditorDateState() {
 
 function dayStamp(date) {
   return formatInputDate(date);
+}
+
+function loadCardOffset() {
+  try {
+    const raw = localStorage.getItem(cardOffsetStorageKey);
+    if (!raw) return { x: 0, y: 0 };
+    const parsed = JSON.parse(raw);
+    if (
+      typeof parsed === 'object'
+      && parsed !== null
+      && Number.isFinite(parsed.x)
+      && Number.isFinite(parsed.y)
+    ) {
+      return { x: parsed.x, y: parsed.y };
+    }
+  } catch (error) {
+    console.warn('Failed to load preview card offset', error);
+  }
+  return { x: 0, y: 0 };
+}
+
+function saveCardOffset() {
+  localStorage.setItem(cardOffsetStorageKey, JSON.stringify(previewState.cardOffset));
+}
+
+function applyCardOffset() {
+  if (!cardShellNode) return;
+  cardShellNode.style.setProperty('--preview-card-offset-x', `${previewState.cardOffset.x}px`);
+  cardShellNode.style.setProperty('--preview-card-offset-y', `${previewState.cardOffset.y}px`);
+}
+
+function canStartCardDrag(target) {
+  if (!(target instanceof HTMLElement)) return false;
+  return !target.closest('button, input, select, textarea, a, label, .page-editor, .page-overview');
 }
 
 function currentDateCardParts(date) {
@@ -903,6 +944,7 @@ function bindInteractions() {
   let holdTriggered = false;
   let swipeStartX = 0;
   let swipeStartY = 0;
+  let cardDrag = null;
 
   rerollButton.addEventListener('click', () => {
     const today = loadSimulatedDate();
@@ -956,7 +998,7 @@ function bindInteractions() {
     });
 
     countdownBlock.addEventListener('pointerup', (event) => {
-      if (previewState.editor || previewState.overviewOpen) return;
+      if (previewState.editor || previewState.overviewOpen || (cardDrag && cardDrag.active)) return;
       const deltaX = event.clientX - swipeStartX;
       const deltaY = event.clientY - swipeStartY;
       if (Math.abs(deltaX) <= 36 || Math.abs(deltaX) <= Math.abs(deltaY)) return;
@@ -973,6 +1015,87 @@ function bindInteractions() {
       savePages();
       renderCard();
     });
+  }
+
+  if (cardNode && cardShellNode) {
+    cardNode.addEventListener('pointerdown', (event) => {
+      if (event.button !== 0) return;
+      if (previewState.editor || previewState.overviewOpen) return;
+      if (!canStartCardDrag(event.target)) return;
+
+      const margin = 18;
+      const shellRect = cardShellNode.getBoundingClientRect();
+      const initialOffset = { ...previewState.cardOffset };
+
+      cardDrag = {
+        active: false,
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+        initialOffset,
+        minX: initialOffset.x - (shellRect.left - margin),
+        maxX: initialOffset.x + (window.innerWidth - margin - shellRect.right),
+        minY: initialOffset.y - (shellRect.top - margin),
+        maxY: initialOffset.y + (window.innerHeight - margin - shellRect.bottom),
+      };
+    });
+
+    cardNode.addEventListener('pointermove', (event) => {
+      if (!cardDrag || event.pointerId !== cardDrag.pointerId) return;
+
+      const deltaX = event.clientX - cardDrag.startX;
+      const deltaY = event.clientY - cardDrag.startY;
+
+      if (!cardDrag.active) {
+        if (Math.abs(deltaX) < 6 && Math.abs(deltaY) < 6) {
+          return;
+        }
+
+        cardDrag.active = true;
+        cardShellNode.classList.add('is-dragging');
+        document.body.classList.add('is-card-dragging');
+        if (typeof cardNode.setPointerCapture === 'function') {
+          cardNode.setPointerCapture(event.pointerId);
+        }
+      }
+
+      const nextX = clamp(
+        cardDrag.initialOffset.x + deltaX,
+        cardDrag.minX,
+        cardDrag.maxX,
+      );
+      const nextY = clamp(
+        cardDrag.initialOffset.y + deltaY,
+        cardDrag.minY,
+        cardDrag.maxY,
+      );
+
+      previewState.cardOffset = { x: nextX, y: nextY };
+      applyCardOffset();
+    });
+
+    const finishCardDrag = (event) => {
+      if (!cardDrag) return;
+      if (event && event.pointerId !== cardDrag.pointerId) return;
+
+      if (cardDrag.active && event && typeof cardNode.releasePointerCapture === 'function') {
+        try {
+          cardNode.releasePointerCapture(cardDrag.pointerId);
+        } catch (error) {
+          // Ignore browsers without strict pointer capture support.
+        }
+      }
+
+      cardShellNode.classList.remove('is-dragging');
+      document.body.classList.remove('is-card-dragging');
+      if (cardDrag.active) {
+        saveCardOffset();
+      }
+      cardDrag = null;
+    };
+
+    cardNode.addEventListener('pointerup', finishCardDrag);
+    cardNode.addEventListener('pointercancel', finishCardDrag);
   }
 
   jumpTodayButton.addEventListener('click', () => {
@@ -1047,6 +1170,8 @@ function bindInteractions() {
 
 async function init() {
   initializePages();
+  previewState.cardOffset = loadCardOffset();
+  applyCardOffset();
   bindInteractions();
   updateMetaCounters();
   renderCard();
@@ -1057,7 +1182,7 @@ async function init() {
     if (!localStorage.getItem(pagesStorageKey)) {
       initializePages();
     }
-    sourceStatusNode.textContent = '已读取仓库中的真实文案库和权重。点页迹可切页，左右轻划可翻页，长按或右键页迹可打开倒计时总览。左侧是预览控制，不属于 app 卡片本体。';
+    sourceStatusNode.textContent = '已读取仓库中的真实文案库和权重。点页迹可切页，左右轻划可翻页，长按或右键页迹可打开倒计时总览；按住卡片空白区可拖动。左侧是预览控制，不属于 app 卡片本体。';
   } catch (error) {
     console.error(error);
     sourceStatusNode.textContent = '未能读取仓库源文件。请在仓库根目录运行 python3 -m http.server 8000 后再打开预览。';
