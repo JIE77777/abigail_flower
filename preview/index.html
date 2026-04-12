@@ -17,7 +17,7 @@
           <h1>阿比盖尔之花</h1>
           <p class="stage__copy">
             这是原生 macOS 卡片 app 的网页模拟预览。它会直接读取仓库里的真实文案库和权重，
-            现在也可以模拟多个独立倒计时页，并直接在卡片里双击日期牌编辑当前页。
+            现在也可以模拟多个独立倒计时页，并直接在卡片里双击标题或日期牌编辑当前页。
           </p>
           <div class="stage__meta">
             <span id="tagline-count">副标题读取中</span>
@@ -84,8 +84,8 @@
                   class="preview-card__badge-button"
                   id="current-badge-button"
                   type="button"
-                  aria-label="编辑当前倒计时日期"
-                  title="双击编辑当前倒计时日期"
+                  aria-label="显示当前日期，双击可编辑当前倒计时页"
+                  title="双击编辑当前倒计时页"
                 >
                   <div class="preview-card__badge" id="current-badge" aria-hidden="true">
                     <span class="preview-card__badge-year" id="current-badge-year">2026</span>
@@ -121,7 +121,7 @@
               <div class="page-editor__head">
                 <div>
                   <p class="page-editor__eyebrow" id="page-editor-eyebrow">编辑当前倒计时</p>
-                  <h3 id="page-editor-title">双击日期牌也能打开这里</h3>
+                  <h3 id="page-editor-title">双击标题或日期牌都能打开这里</h3>
                 </div>
                 <button class="page-editor__close" id="page-editor-close" type="button" aria-label="关闭">×</button>
               </div>

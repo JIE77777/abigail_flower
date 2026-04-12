@@ -646,7 +646,7 @@ function renderCard() {
   const entries = pickTaglines(seedText);
   const egg = pickEasterEgg(seedText, today, remainingDaysCount);
   const tone = resolveTone(remainingDaysCount);
-  const badgeParts = currentDateCardParts(target);
+  const badgeParts = currentDateCardParts(today);
 
   cardNode.dataset.tone = tone;
   currentBadgeYearNode.textContent = badgeParts.year;
@@ -705,7 +705,7 @@ function openEditor(isNew) {
       };
 
   pageEditorEyebrow.textContent = isNew ? '新建倒计时页' : '编辑当前倒计时';
-  pageEditorTitle.textContent = isNew ? '给新的日期页起个名字' : '双击日期牌也能打开这里';
+  pageEditorTitle.textContent = isNew ? '给新的日期页起个名字' : '双击标题或日期牌都能打开这里';
   pageTitleInput.value = previewState.editor.title;
   pageDateInput.value = previewState.editor.targetDate;
   pageDeleteButton.hidden = isNew || previewState.pages.length <= 1;
@@ -771,6 +771,10 @@ function bindInteractions() {
     openEditor(false);
   });
 
+  countdownBlock.addEventListener('dblclick', () => {
+    openEditor(false);
+  });
+
   jumpTodayButton.addEventListener('click', () => {
     const today = currentDayStart();
     saveSimulatedDate(today);
@@ -828,7 +832,7 @@ async function init() {
     if (!localStorage.getItem(pagesStorageKey)) {
       initializePages();
     }
-    sourceStatusNode.textContent = '已读取仓库中的真实文案库和权重。双击日期牌可编辑当前倒计时，点右侧圆点切页。';
+    sourceStatusNode.textContent = '已读取仓库中的真实文案库和权重。双击标题或日期牌可编辑当前倒计时，点右侧圆点切页。';
   } catch (error) {
     console.error(error);
     sourceStatusNode.textContent = '未能读取仓库源文件。请在仓库根目录运行 python3 -m http.server 8000 后再打开预览。';

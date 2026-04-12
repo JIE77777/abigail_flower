@@ -16,8 +16,8 @@ struct CardView: View {
         CardTheme.resolve(daysRemaining: themedDaysRemaining)
     }
 
-    private var targetDateCard: (year: String, date: String, weekday: String) {
-        dateCardParts(for: viewModel.currentPage.targetDate)
+    private var currentDateCard: (year: String, date: String, weekday: String) {
+        dateCardParts(for: Date())
     }
 
     private var primaryEntries: [CardEntry] {
@@ -193,7 +193,7 @@ struct CardView: View {
 
     private var currentDateBadge: some View {
         VStack(spacing: 0) {
-            Text(targetDateCard.year)
+            Text(currentDateCard.year)
                 .font(.system(size: 10, weight: .bold, design: .rounded))
                 .tracking(1.6)
                 .foregroundColor(Color.white.opacity(0.96))
@@ -211,13 +211,13 @@ struct CardView: View {
                 )
 
             VStack(spacing: 4) {
-                Text(targetDateCard.date)
+                Text(currentDateCard.date)
                     .font(.system(size: 20, weight: .bold, design: .rounded))
                     .monospacedDigit()
                     .tracking(-0.7)
                     .foregroundColor(Color(red: 0.34, green: 0.20, blue: 0.19))
 
-                Text(targetDateCard.weekday)
+                Text(currentDateCard.weekday)
                     .font(.system(size: 10, weight: .semibold, design: .rounded))
                     .tracking(0.8)
                     .foregroundColor(theme.badgeText)
@@ -236,7 +236,7 @@ struct CardView: View {
         .shadow(color: Color(red: 0.33, green: 0.19, blue: 0.17).opacity(0.07), radius: 12, x: 0, y: 8)
         .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         .onTapGesture(count: 2, perform: openCurrentPageEditor)
-        .help("双击编辑日期与标签")
+        .help("双击可编辑当前倒计时页")
     }
 
     private var countdownBlock: some View {
@@ -247,6 +247,9 @@ struct CardView: View {
                 .tracking(0.7)
                 .padding(.leading, 2)
                 .lineLimit(1)
+                .contentShape(Rectangle())
+                .onTapGesture(count: 2, perform: openCurrentPageEditor)
+                .help("双击编辑当前倒计时页")
 
             if viewModel.content.daysRemaining == 0 {
                 Text("今天")
@@ -343,7 +346,7 @@ struct CardView: View {
                     Text(pageDraft?.isNew == true ? "新建日期页" : "编辑当前日期")
                         .font(.system(size: 14, weight: .semibold, design: .serif))
                         .foregroundColor(Color(red: 0.30, green: 0.18, blue: 0.17))
-                    Text("双击日期牌也能打开这里")
+                    Text("双击标题或日期牌都能打开这里")
                         .font(.system(size: 10, weight: .medium, design: .rounded))
                         .foregroundColor(Color(red: 0.52, green: 0.37, blue: 0.34))
                 }
