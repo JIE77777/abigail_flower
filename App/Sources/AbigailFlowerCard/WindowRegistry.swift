@@ -90,7 +90,11 @@ final class WindowRegistry: ObservableObject {
         }
 
         for (index, card) in workspaceController.cards.enumerated() {
+            let isActivelyDragging = armedDragCardID == card.id || draggingCardID == card.id
+
             if let controller = windowControllers[card.id] {
+                guard !isActivelyDragging else { continue }
+
                 if let frame = card.frame?.rect, controller.currentFrame() != frame {
                     controller.applyFrame(frame)
                 } else if controller.currentFrame() == nil {
