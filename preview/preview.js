@@ -247,10 +247,13 @@ function savePreviewOpacity() {
   localStorage.setItem(previewOpacityStorageKey, String(previewState.previewOpacity));
 }
 
+function applyShellOffset(node, offset) {
+  if (!node) return;
+  node.style.transform = `translate3d(${offset.x}px, ${offset.y}px, 0)`;
+}
+
 function applyCardOffset() {
-  if (!cardShellNode) return;
-  cardShellNode.style.setProperty('--preview-card-offset-x', `${previewState.cardOffset.x}px`);
-  cardShellNode.style.setProperty('--preview-card-offset-y', `${previewState.cardOffset.y}px`);
+  applyShellOffset(cardShellNode, previewState.cardOffset);
 }
 
 function syncPreviewOpacityControls() {
@@ -1151,8 +1154,37 @@ function renderDetachedCards() {
   });
 }
 
+function createRafDragUpdater(applyOffset) {
+  let frame = 0;
+  let latestOffset = null;
+
+  const flush = () => {
+    frame = 0;
+    if (!latestOffset) return;
+    applyOffset(latestOffset);
+  };
+
+  return {
+    schedule(offset) {
+      latestOffset = offset;
+      if (frame) return;
+      frame = window.requestAnimationFrame(flush);
+    },
+    flushNow() {
+      if (frame) {
+        window.cancelAnimationFrame(frame);
+        frame = 0;
+      }
+      if (latestOffset) {
+        applyOffset(latestOffset);
+      }
+    },
+  };
+}
+
 function enableDetachedCardDrag(shell, card, detachedID) {
   let drag = null;
+  const updater = createRafDragUpdater((offset) => applyShellOffset(shell, offset));
 
   card.addEventListener('pointerdown', (event) => {
     if (event.button !== 0) return;
@@ -1164,6 +1196,7 @@ function enableDetachedCardDrag(shell, card, detachedID) {
     if (!detached) return;
 
     drag = {
+      active: false,
       pointerId: event.pointerId,
       startX: event.clientX,
       startY: event.clientY,
@@ -1182,8 +1215,14 @@ function enableDetachedCardDrag(shell, card, detachedID) {
 
     const deltaX = event.clientX - drag.startX;
     const deltaY = event.clientY - drag.startY;
-    if (!shell.classList.contains('is-dragging') && Math.hypot(deltaX, deltaY) < 6) {
-      return;
+    if (!drag.active) {
+      if (Math.hypot(deltaX, deltaY) < 6) return;
+      drag.active = true;
+      shell.classList.add('is-dragging');
+      document.body.classList.add('is-card-dragging');
+      if (typeof card.setPointerCapture === 'function') {
+        card.setPointerCapture(event.pointerId);
+      }
     }
 
     const nextOffset = {
@@ -1192,14 +1231,24 @@ function enableDetachedCardDrag(shell, card, detachedID) {
     };
 
     detached.offset = nextOffset;
-    shell.classList.add('is-dragging');
-    shell.style.transform = `translate(${nextOffset.x}px, ${nextOffset.y}px)`;
+    updater.schedule(nextOffset);
   });
 
   const finish = (event) => {
     if (!drag || (event && event.pointerId !== drag.pointerId)) return;
+    if (drag.active && event && typeof card.releasePointerCapture === 'function') {
+      try {
+        card.releasePointerCapture(drag.pointerId);
+      } catch (error) {
+        // Ignore browsers without strict pointer capture support.
+      }
+    }
+    updater.flushNow();
     shell.classList.remove('is-dragging');
-    saveDetachedCards();
+    document.body.classList.remove('is-card-dragging');
+    if (drag.active) {
+      saveDetachedCards();
+    }
     drag = null;
   };
 
@@ -1402,6 +1451,8 @@ function bindInteractions() {
   }
 
   if (cardNode && cardShellNode) {
+    const mainCardUpdater = createRafDragUpdater((offset) => applyShellOffset(cardShellNode, offset));
+
     cardNode.addEventListener('pointerdown', (event) => {
       if (event.button !== 0) return;
       if (previewState.editor || previewState.overviewOpen) return;
@@ -1455,7 +1506,7 @@ function bindInteractions() {
       );
 
       previewState.cardOffset = { x: nextX, y: nextY };
-      applyCardOffset();
+      mainCardUpdater.schedule(previewState.cardOffset);
     });
 
     const finishCardDrag = (event) => {
@@ -1470,6 +1521,7 @@ function bindInteractions() {
         }
       }
 
+      mainCardUpdater.flushNow();
       cardShellNode.classList.remove('is-dragging');
       document.body.classList.remove('is-card-dragging');
       if (cardDrag.active) {
